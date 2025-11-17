@@ -2,6 +2,7 @@ import './style.css';
 import { ChessEngine } from './ChessEngine';
 import { ChessBoardRenderer } from './ChessBoardRenderer';
 import { StockfishAI } from './StockfishAI';
+import { OpeningApp } from './OpeningApp';
 import type { Position, PieceColor } from './types';
 
 class ChessApp {
@@ -356,5 +357,65 @@ class ChessApp {
   }
 }
 
-// Initialize the app
-new ChessApp();
+class AppManager {
+  private chessApp: ChessApp | null = null;
+  private openingApp: OpeningApp | null = null;
+
+  constructor() {
+    this.setupModeButtons();
+    this.setMode('play');
+  }
+
+  private setupModeButtons(): void {
+    const playBtn = document.getElementById('mode-play');
+    const openingsBtn = document.getElementById('mode-openings');
+
+    playBtn?.addEventListener('click', () => this.setMode('play'));
+    openingsBtn?.addEventListener('click', () => this.setMode('openings'));
+
+    // Add back button from view mode
+    document.getElementById('btn-repository-from-view')?.addEventListener('click', () => {
+      if (this.openingApp) {
+        const event = new MouseEvent('click');
+        document.getElementById('btn-repository')?.dispatchEvent(event);
+      }
+    });
+  }
+
+  private setMode(mode: 'play' | 'openings'): void {
+    // Update button states
+    const playBtn = document.getElementById('mode-play');
+    const openingsBtn = document.getElementById('mode-openings');
+
+    playBtn?.classList.toggle('active', mode === 'play');
+    openingsBtn?.classList.toggle('active', mode === 'openings');
+
+    // Show/hide containers
+    const playContainer = document.getElementById('play-container');
+    const openingsContainer = document.getElementById('openings-container');
+
+    if (mode === 'play') {
+      playContainer?.classList.remove('hidden');
+      openingsContainer?.classList.add('hidden');
+
+      // Initialize chess app if not already done
+      if (!this.chessApp) {
+        this.chessApp = new ChessApp();
+      }
+    } else {
+      playContainer?.classList.add('hidden');
+      openingsContainer?.classList.remove('hidden');
+
+      // Initialize opening app if not already done
+      if (!this.openingApp) {
+        const canvas = document.getElementById('opening-board') as HTMLCanvasElement;
+        if (canvas) {
+          this.openingApp = new OpeningApp(canvas);
+        }
+      }
+    }
+  }
+}
+
+// Initialize the app manager
+new AppManager();

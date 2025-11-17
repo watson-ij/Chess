@@ -7,95 +7,186 @@
 </head>
 <body>
   <div id="app">
-    <h1>Chess</h1>
-
-    <!-- Game Setup Panel -->
-    <div id="setup-panel">
-      <div class="setup-section">
-        <h3>Game Mode</h3>
-        <div class="radio-group">
-          <label>
-            <input type="radio" name="game-mode" value="pvp" checked>
-            Human vs Human
-          </label>
-          <label>
-            <input type="radio" name="game-mode" value="ai">
-            Human vs AI
-          </label>
-        </div>
+    <header>
+      <h1>Chess</h1>
+      <div id="mode-selector">
+        <button id="mode-play" class="mode-btn active">Play Chess</button>
+        <button id="mode-openings" class="mode-btn">Opening Repository</button>
       </div>
+    </header>
 
-      <div id="ai-settings" class="setup-section" style="display: none;">
-        <h3>AI Settings</h3>
-        <div class="form-group">
-          <label for="player-color">Play as:</label>
-          <select id="player-color">
-            <option value="white">White</option>
-            <option value="black">Black</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="ai-difficulty">AI Difficulty:</label>
-          <select id="ai-difficulty">
-            <option value="1">Very Easy (1)</option>
-            <option value="3">Easy (3)</option>
-            <option value="5">Beginner (5)</option>
-            <option value="8">Intermediate (8)</option>
-            <option value="12">Advanced (12)</option>
-            <option value="15">Expert (15)</option>
-            <option value="18">Master (18)</option>
-            <option value="20" selected>Maximum (20)</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="setup-section">
-        <h3>Starting Position</h3>
-        <div class="form-group">
-          <label>
-            <input type="radio" name="position-mode" value="standard" checked>
-            Standard Position
-          </label>
-        </div>
-        <div class="form-group">
-          <label>
-            <input type="radio" name="position-mode" value="fen">
-            From FEN String
-          </label>
-        </div>
-        <div id="fen-input-group" class="form-group" style="display: none;">
-          <input type="text" id="fen-input" placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">
-          <small>Enter a valid FEN string</small>
-        </div>
-        <div class="form-group">
-          <label>
-            <input type="radio" name="position-mode" value="pgn">
-            From PGN
-          </label>
-        </div>
-        <div id="pgn-input-group" class="form-group" style="display: none;">
-          <textarea id="pgn-input" rows="4" placeholder="1. e4 e5 2. Nf3 Nc6..."></textarea>
-          <small>Paste PGN and the game will be loaded to the last move</small>
-        </div>
-      </div>
-
-      <button id="start-game" class="btn-primary">Start Game</button>
-      <button id="reset-game" class="btn-secondary" style="display: none;">New Game</button>
-    </div>
-
-    <div id="game-container" style="display: none;">
-      <canvas id="chess-board" width="640" height="640"></canvas>
-      <div id="side-panel">
-        <div id="game-info">
-          <div id="turn-indicator"></div>
-          <div id="game-status"></div>
-          <div id="ai-thinking" style="display: none;">
-            <span class="spinner"></span> AI is thinking...
+    <!-- Play Chess Mode -->
+    <div id="play-container">
+      <!-- Game Setup Panel -->
+      <div id="setup-panel">
+        <div class="setup-section">
+          <h3>Game Mode</h3>
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="game-mode" value="pvp" checked>
+              Human vs Human
+            </label>
+            <label>
+              <input type="radio" name="game-mode" value="ai">
+              Human vs AI
+            </label>
           </div>
         </div>
-        <div id="move-history">
-          <h3>Move History</h3>
-          <div id="moves-list"></div>
+
+        <div id="ai-settings" class="setup-section" style="display: none;">
+          <h3>AI Settings</h3>
+          <div class="form-group">
+            <label for="player-color">Play as:</label>
+            <select id="player-color">
+              <option value="white">White</option>
+              <option value="black">Black</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ai-difficulty">AI Difficulty:</label>
+            <select id="ai-difficulty">
+              <option value="1">Very Easy (1)</option>
+              <option value="3">Easy (3)</option>
+              <option value="5">Beginner (5)</option>
+              <option value="8">Intermediate (8)</option>
+              <option value="12">Advanced (12)</option>
+              <option value="15">Expert (15)</option>
+              <option value="18">Master (18)</option>
+              <option value="20" selected>Maximum (20)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setup-section">
+          <h3>Starting Position</h3>
+          <div class="form-group">
+            <label>
+              <input type="radio" name="position-mode" value="standard" checked>
+              Standard Position
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="radio" name="position-mode" value="fen">
+              From FEN String
+            </label>
+          </div>
+          <div id="fen-input-group" class="form-group" style="display: none;">
+            <input type="text" id="fen-input" placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">
+            <small>Enter a valid FEN string</small>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="radio" name="position-mode" value="pgn">
+              From PGN
+            </label>
+          </div>
+          <div id="pgn-input-group" class="form-group" style="display: none;">
+            <textarea id="pgn-input" rows="4" placeholder="1. e4 e5 2. Nf3 Nc6..."></textarea>
+            <small>Paste PGN and the game will be loaded to the last move</small>
+          </div>
+        </div>
+
+        <button id="start-game" class="btn-primary">Start Game</button>
+        <button id="reset-game" class="btn-secondary" style="display: none;">New Game</button>
+      </div>
+
+      <div id="game-container" style="display: none;">
+        <canvas id="chess-board" width="640" height="640"></canvas>
+        <div id="side-panel">
+          <div id="game-info">
+            <div id="turn-indicator"></div>
+            <div id="game-status"></div>
+            <div id="ai-thinking" style="display: none;">
+              <span class="spinner"></span> AI is thinking...
+            </div>
+          </div>
+          <div id="move-history">
+            <h3>Move History</h3>
+            <div id="moves-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Opening Repository Mode -->
+    <div id="openings-container" class="hidden">
+      <div id="openings-layout">
+        <canvas id="opening-board" width="640" height="640"></canvas>
+        <div id="openings-panel">
+
+          <!-- Repository Management -->
+          <div id="repository-container">
+            <h2>Opening Repository</h2>
+            <div id="repository-actions">
+              <button id="btn-new-opening" class="btn-primary">New Opening</button>
+              <button id="btn-import-pgn" class="btn-secondary">Import PGN</button>
+              <button id="btn-practice" class="btn-primary">Practice</button>
+            </div>
+            <div id="repository-stats"></div>
+            <div id="opening-list"></div>
+            <div id="data-actions">
+              <button id="btn-export-json" class="btn-small">Export All (JSON)</button>
+              <button id="btn-import-json" class="btn-small">Import JSON</button>
+            </div>
+          </div>
+
+          <!-- Input Mode -->
+          <div id="input-container" class="hidden">
+            <h2>Input Mode</h2>
+            <div id="input-info">
+              <h3 id="input-opening-name"></h3>
+              <p class="instruction">Click pieces to add moves to your opening</p>
+            </div>
+            <div id="input-moves">
+              <strong>Moves:</strong>
+              <div id="input-move-list"></div>
+            </div>
+            <div id="input-actions">
+              <button id="btn-mark-key-position" class="btn-secondary">☆ Mark as Key</button>
+              <button id="btn-reset-input" class="btn-secondary">Reset</button>
+              <button id="btn-view-mode" class="btn-secondary">View Tree</button>
+              <button id="btn-repository" class="btn-secondary">Back</button>
+            </div>
+          </div>
+
+          <!-- View Mode -->
+          <div id="view-container" class="hidden">
+            <h2>Tree View</h2>
+            <div id="tree-view-scroll">
+              <div id="tree-view"></div>
+            </div>
+            <div id="view-actions">
+              <button id="btn-input-mode" class="btn-secondary">Input Mode</button>
+              <button id="btn-repository-from-view" class="btn-secondary">Back</button>
+            </div>
+          </div>
+
+          <!-- Practice Mode -->
+          <div id="practice-container" class="hidden">
+            <h2>Practice Mode</h2>
+            <div id="practice-info">
+              <div id="practice-question"></div>
+              <div id="practice-instruction">Find the best move!</div>
+            </div>
+            <div id="practice-result"></div>
+            <div id="quality-buttons" class="hidden">
+              <p><strong>How well did you remember?</strong></p>
+              <div id="quality-grid">
+                <button id="btn-quality-0" class="quality-btn" data-quality="0">0 - Complete blackout</button>
+                <button id="btn-quality-1" class="quality-btn" data-quality="1">1 - Incorrect</button>
+                <button id="btn-quality-2" class="quality-btn" data-quality="2">2 - Incorrect, felt familiar</button>
+                <button id="btn-quality-3" class="quality-btn" data-quality="3">3 - Correct, difficult</button>
+                <button id="btn-quality-4" class="quality-btn" data-quality="4">4 - Correct, hesitation</button>
+                <button id="btn-quality-5" class="quality-btn" data-quality="5">5 - Perfect!</button>
+              </div>
+            </div>
+            <div id="practice-actions">
+              <button id="btn-show-answer" class="btn-secondary">Show Answer</button>
+              <button id="btn-next-position" class="btn-secondary">Skip</button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
