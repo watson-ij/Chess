@@ -1,12 +1,15 @@
 import type { Board, Piece, Position } from './types';
 
 export class ChessBoardRenderer {
+  private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private squareSize: number;
   private selectedSquare: Position | null = null;
   private highlightedSquares: Position[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+
     // Setup high DPI canvas
     const displaySize = ChessBoardRenderer.setupHighDPICanvas(canvas);
 
@@ -538,5 +541,19 @@ export class ChessBoardRenderer {
       row: Math.floor(y / this.squareSize),
       col: Math.floor(x / this.squareSize)
     };
+  }
+
+  public getCanvas(): HTMLCanvasElement {
+    return this.canvas;
+  }
+
+  public clearHighlights(): void {
+    this.selectedSquare = null;
+    this.highlightedSquares = [];
+  }
+
+  public setHighlights(selected: Position, legalMoves: Position[]): void {
+    this.selectedSquare = selected;
+    this.highlightedSquares = legalMoves;
   }
 }
