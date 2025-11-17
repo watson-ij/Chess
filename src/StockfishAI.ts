@@ -11,8 +11,10 @@ export class StockfishAI {
   private async initializeEngine(): Promise<void> {
     try {
       // Use local worker file to avoid CORS issues
-      // The worker is served from the same origin
-      this.worker = new Worker('/stockfish-worker.js');
+      // Use base URL from Vite config to work with GitHub Pages subdirectory
+      const base = import.meta.env.BASE_URL || '/';
+      const workerPath = `${base}stockfish-worker.js`;
+      this.worker = new Worker(workerPath);
 
       this.worker.onmessage = (event) => {
         const message = event.data;
