@@ -462,6 +462,32 @@ export class ChessEngine {
       notation += '=' + pieceNotation[move.promotionPiece];
     }
 
+    // Check and checkmate symbols
+    // We need to check the resulting position after this move
+    const opponentColor = this.state.currentTurn === 'white' ? 'black' : 'white';
+    const kingPos = this.findKing(opponentColor);
+
+    if (kingPos) {
+      const wouldBeCheck = this.isSquareUnderAttack(kingPos, opponentColor);
+
+      if (wouldBeCheck) {
+        // Temporarily switch turn to check if opponent has legal moves
+        const originalTurn = this.state.currentTurn;
+        this.state.currentTurn = opponentColor;
+
+        const hasLegalMoves = this.hasAnyLegalMoves(opponentColor);
+
+        // Switch turn back
+        this.state.currentTurn = originalTurn;
+
+        if (!hasLegalMoves) {
+          notation += '#';
+        } else {
+          notation += '+';
+        }
+      }
+    }
+
     return notation;
   }
 
