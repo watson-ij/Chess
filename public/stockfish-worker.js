@@ -1,11 +1,11 @@
 // Stockfish Web Worker
-// This worker loads Stockfish from unpkg CDN and forwards UCI commands
+// Loads Stockfish engine from same origin (no external CDN needed)
 
 let stockfish = null;
-let ready = false;
 
-// Load Stockfish from unpkg (has good CORS support)
-importScripts('https://unpkg.com/stockfish@14.0.0/stockfish.js');
+// Load Stockfish from the same directory (served from public/)
+// This avoids all CORS and CSP issues since it's same-origin
+importScripts('./stockfish.js');
 
 // Initialize Stockfish when loaded
 if (typeof STOCKFISH !== 'undefined') {
