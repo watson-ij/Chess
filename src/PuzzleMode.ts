@@ -34,12 +34,14 @@ export class PuzzleMode {
 
   private onBack: () => void;
   private onNextPuzzle?: () => void;
+  private prefix: string;
 
   constructor(
     canvas: HTMLCanvasElement,
     puzzle: EndgamePuzzle,
     onBack: () => void,
-    onNextPuzzle?: () => void
+    onNextPuzzle?: () => void,
+    prefix: string = ''
   ) {
     this.puzzle = puzzle;
     this.engine = new ChessEngine();
@@ -47,19 +49,20 @@ export class PuzzleMode {
     this.validator = new PuzzleValidator(puzzle);
     this.onBack = onBack;
     this.onNextPuzzle = onNextPuzzle;
+    this.prefix = prefix ? `${prefix}-` : '';
 
-    // Initialize UI elements
-    this.puzzleTitle = document.getElementById('puzzle-title')!;
-    this.puzzleDescription = document.getElementById('puzzle-description')!;
-    this.puzzleObjective = document.getElementById('puzzle-objective')!;
-    this.puzzleFeedback = document.getElementById('puzzle-feedback')!;
-    this.puzzleHints = document.getElementById('puzzle-hints')!;
-    this.moveList = document.getElementById('move-list')!;
-    this.hintButton = document.getElementById('hint-button') as HTMLButtonElement;
-    this.resetButton = document.getElementById('reset-button') as HTMLButtonElement;
-    this.backButton = document.getElementById('back-button') as HTMLButtonElement;
-    this.nextPuzzleButton = document.getElementById('next-puzzle-button') as HTMLButtonElement;
-    this.educational = document.getElementById('educational')!;
+    // Initialize UI elements with optional prefix
+    this.puzzleTitle = document.getElementById(`${this.prefix}puzzle-title`)!;
+    this.puzzleDescription = document.getElementById(`${this.prefix}puzzle-description`)!;
+    this.puzzleObjective = document.getElementById(`${this.prefix}puzzle-objective`)!;
+    this.puzzleFeedback = document.getElementById(`${this.prefix}puzzle-feedback`)!;
+    this.puzzleHints = document.getElementById(`${this.prefix}puzzle-hints`)!;
+    this.moveList = document.getElementById(`${this.prefix}move-list`)!;
+    this.hintButton = document.getElementById(`${this.prefix}hint-button`) as HTMLButtonElement;
+    this.resetButton = document.getElementById(`${this.prefix}reset-button`) as HTMLButtonElement;
+    this.backButton = document.getElementById(`${this.prefix}back-button`) as HTMLButtonElement;
+    this.nextPuzzleButton = document.getElementById(`${this.prefix}next-puzzle-button`) as HTMLButtonElement;
+    this.educational = document.getElementById(`${this.prefix}educational`)!
 
     this.initializePuzzle();
     this.setupEventListeners();

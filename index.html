@@ -26,6 +26,11 @@
           <h2>Endgame Training</h2>
           <p>Master classic endgame positions</p>
         </button>
+        <button id="select-tactical" class="mode-select-btn">
+          <div class="mode-icon">⚡</div>
+          <h2>Tactical Puzzles</h2>
+          <p>Sharpen your tactical vision</p>
+        </button>
       </div>
     </div>
 
@@ -265,6 +270,54 @@
             </div>
 
             <div id="educational" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tactical Puzzles Mode -->
+    <div id="tactical-container" class="hidden">
+      <div class="page-header">
+        <button id="back-from-tactical" class="btn-back">← Back to Menu</button>
+        <h1>Tactical Puzzles</h1>
+      </div>
+
+      <!-- Puzzle Selection -->
+      <div id="tactical-puzzle-selection">
+        <div id="tactical-puzzle-selector-container"></div>
+      </div>
+
+      <!-- Puzzle Play Mode -->
+      <div id="tactical-puzzle-game" class="hidden">
+        <button id="tactical-back-to-puzzles" class="btn-back">← Back to Puzzles</button>
+        <div id="tactical-puzzle-container">
+          <canvas id="tactical-puzzle-board"></canvas>
+          <div id="tactical-puzzle-panel">
+            <div id="tactical-puzzle-info">
+              <h2 id="tactical-puzzle-title"></h2>
+              <p id="tactical-puzzle-description"></p>
+              <p class="puzzle-objective" id="tactical-puzzle-objective"></p>
+            </div>
+
+            <div id="tactical-puzzle-feedback" class="feedback"></div>
+
+            <div id="tactical-puzzle-controls">
+              <button id="tactical-hint-button" class="control-btn">💡 Get Hint</button>
+              <button id="tactical-reset-button" class="control-btn">🔄 Reset</button>
+              <button id="tactical-next-puzzle-button" class="control-btn" style="display: none;">➡️ Next Puzzle</button>
+            </div>
+
+            <div id="tactical-puzzle-hints-section">
+              <h3>Hints Used</h3>
+              <div id="tactical-puzzle-hints"></div>
+            </div>
+
+            <div id="tactical-move-history-puzzle">
+              <h3>Moves</h3>
+              <div id="tactical-move-list"></div>
+            </div>
+
+            <div id="tactical-educational" style="display: none;"></div>
           </div>
         </div>
       </div>

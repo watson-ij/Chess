@@ -6,8 +6,11 @@ import { OpeningApp } from './OpeningApp';
 import { PuzzleMode } from './PuzzleMode';
 import { PuzzleSelector } from './PuzzleSelector';
 import { ENDGAME_PUZZLES } from './PuzzleDatabase';
+import { TacticalPuzzleSelector } from './TacticalPuzzleSelector';
+import { TACTICAL_PUZZLES } from './TacticalPuzzleDatabase';
 import type { Position, PieceColor } from './types';
 import type { EndgamePuzzle } from './EndgameTypes';
+import type { TacticalPuzzle } from './TacticalPuzzleTypes';
 
 class ChessApp {
   private engine: ChessEngine;
@@ -608,6 +611,8 @@ class AppManager {
   private openingApp: OpeningApp | null = null;
   private puzzleSelector: PuzzleSelector | null = null;
   private currentPuzzleIndex: number = 0;
+  private tacticalPuzzleSelector: TacticalPuzzleSelector | null = null;
+  private currentTacticalPuzzleIndex: number = 0;
 
   constructor() {
     this.setupNavigationButtons();
@@ -619,19 +624,23 @@ class AppManager {
     const selectPlayBtn = document.getElementById('select-play');
     const selectOpeningsBtn = document.getElementById('select-openings');
     const selectEndgamesBtn = document.getElementById('select-endgames');
+    const selectTacticalBtn = document.getElementById('select-tactical');
 
     selectPlayBtn?.addEventListener('click', () => this.showPlayMode());
     selectOpeningsBtn?.addEventListener('click', () => this.showOpeningsMode());
     selectEndgamesBtn?.addEventListener('click', () => this.showEndgamesMode());
+    selectTacticalBtn?.addEventListener('click', () => this.showTacticalMode());
 
     // Back buttons
     const backFromPlayBtn = document.getElementById('back-from-play');
     const backFromOpeningsBtn = document.getElementById('back-from-openings');
     const backFromEndgamesBtn = document.getElementById('back-from-endgames');
+    const backFromTacticalBtn = document.getElementById('back-from-tactical');
 
     backFromPlayBtn?.addEventListener('click', () => this.showLandingPage());
     backFromOpeningsBtn?.addEventListener('click', () => this.showLandingPage());
     backFromEndgamesBtn?.addEventListener('click', () => this.showLandingPage());
+    backFromTacticalBtn?.addEventListener('click', () => this.showLandingPage());
   }
 
   private showLandingPage(): void {
@@ -639,11 +648,13 @@ class AppManager {
     const playContainer = document.getElementById('play-container');
     const openingsContainer = document.getElementById('openings-container');
     const endgamesContainer = document.getElementById('endgames-container');
+    const tacticalContainer = document.getElementById('tactical-container');
 
     landingPage?.classList.remove('hidden');
     playContainer?.classList.add('hidden');
     openingsContainer?.classList.add('hidden');
     endgamesContainer?.classList.add('hidden');
+    tacticalContainer?.classList.add('hidden');
   }
 
   private showPlayMode(): void {
@@ -651,11 +662,13 @@ class AppManager {
     const playContainer = document.getElementById('play-container');
     const openingsContainer = document.getElementById('openings-container');
     const endgamesContainer = document.getElementById('endgames-container');
+    const tacticalContainer = document.getElementById('tactical-container');
 
     landingPage?.classList.add('hidden');
     playContainer?.classList.remove('hidden');
     openingsContainer?.classList.add('hidden');
     endgamesContainer?.classList.add('hidden');
+    tacticalContainer?.classList.add('hidden');
 
     // Initialize chess app if not already done
     if (!this.chessApp) {
@@ -668,11 +681,13 @@ class AppManager {
     const playContainer = document.getElementById('play-container');
     const openingsContainer = document.getElementById('openings-container');
     const endgamesContainer = document.getElementById('endgames-container');
+    const tacticalContainer = document.getElementById('tactical-container');
 
     landingPage?.classList.add('hidden');
     playContainer?.classList.add('hidden');
     openingsContainer?.classList.remove('hidden');
     endgamesContainer?.classList.add('hidden');
+    tacticalContainer?.classList.add('hidden');
 
     // Initialize opening app if not already done
     if (!this.openingApp) {
@@ -688,11 +703,13 @@ class AppManager {
     const playContainer = document.getElementById('play-container');
     const openingsContainer = document.getElementById('openings-container');
     const endgamesContainer = document.getElementById('endgames-container');
+    const tacticalContainer = document.getElementById('tactical-container');
 
     landingPage?.classList.add('hidden');
     playContainer?.classList.add('hidden');
     openingsContainer?.classList.add('hidden');
     endgamesContainer?.classList.remove('hidden');
+    tacticalContainer?.classList.add('hidden');
 
     // Show puzzle selection, hide puzzle game
     const puzzleSelection = document.getElementById('puzzle-selection');
@@ -750,6 +767,99 @@ class AppManager {
     const nextPuzzle = ENDGAME_PUZZLES[nextIndex];
     this.startPuzzle(nextPuzzle);
   }
+
+  private showTacticalMode(): void {
+    const landingPage = document.getElementById('landing-page');
+    const playContainer = document.getElementById('play-container');
+    const openingsContainer = document.getElementById('openings-container');
+    const endgamesContainer = document.getElementById('endgames-container');
+    const tacticalContainer = document.getElementById('tactical-container');
+
+    landingPage?.classList.add('hidden');
+    playContainer?.classList.add('hidden');
+    openingsContainer?.classList.add('hidden');
+    endgamesContainer?.classList.add('hidden');
+    tacticalContainer?.classList.remove('hidden');
+
+    // Show puzzle selection, hide puzzle game
+    const puzzleSelection = document.getElementById('tactical-puzzle-selection');
+    const puzzleGame = document.getElementById('tactical-puzzle-game');
+    if (puzzleSelection) puzzleSelection.classList.remove('hidden');
+    if (puzzleGame) puzzleGame.classList.add('hidden');
+
+    // Initialize tactical puzzle selector if not already done
+    if (!this.tacticalPuzzleSelector) {
+      const container = document.getElementById('tactical-puzzle-selector-container');
+      if (container) {
+        this.tacticalPuzzleSelector = new TacticalPuzzleSelector(container, (puzzle) => {
+          this.startTacticalPuzzle(puzzle);
+        });
+      }
+    }
+  }
+
+  private startTacticalPuzzle(puzzle: TacticalPuzzle): void {
+    // Find the index of the current puzzle
+    this.currentTacticalPuzzleIndex = TACTICAL_PUZZLES.findIndex(p => p.id === puzzle.id);
+
+    // Hide puzzle selection, show puzzle game
+    const puzzleSelection = document.getElementById('tactical-puzzle-selection');
+    const puzzleGame = document.getElementById('tactical-puzzle-game');
+    if (puzzleSelection) puzzleSelection.classList.add('hidden');
+    if (puzzleGame) puzzleGame.classList.remove('hidden');
+
+    // Setup back to puzzles button
+    const backToPuzzlesBtn = document.getElementById('tactical-back-to-puzzles');
+    if (backToPuzzlesBtn) {
+      // Remove old listeners
+      const newBtn = backToPuzzlesBtn.cloneNode(true) as HTMLElement;
+      backToPuzzlesBtn.parentNode?.replaceChild(newBtn, backToPuzzlesBtn);
+
+      newBtn.addEventListener('click', () => {
+        this.showTacticalMode();
+      });
+    }
+
+    // Create puzzle mode (reusing PuzzleMode but with tactical puzzle data)
+    const puzzleCanvas = document.getElementById('tactical-puzzle-board') as HTMLCanvasElement;
+    if (puzzleCanvas) {
+      // Convert TacticalPuzzle to EndgamePuzzle format for PuzzleMode
+      const endgamePuzzle: EndgamePuzzle = {
+        id: puzzle.id,
+        category: 'basic-checkmates', // Not used for tactical puzzles
+        title: puzzle.title,
+        description: puzzle.description,
+        fen: puzzle.fen,
+        playerSide: puzzle.playerSide,
+        objective: puzzle.objective,
+        objectiveDescription: puzzle.objectiveDescription,
+        difficulty: puzzle.difficulty,
+        solution: puzzle.solution,
+        hints: puzzle.hints,
+        educational: puzzle.educational,
+        tags: puzzle.tags
+      };
+
+      new PuzzleMode(
+        puzzleCanvas,
+        endgamePuzzle,
+        () => {
+          this.showTacticalMode();
+        },
+        () => {
+          this.loadNextTacticalPuzzle();
+        },
+        'tactical' // Pass a prefix for element IDs
+      );
+    }
+  }
+
+  private loadNextTacticalPuzzle(): void {
+    // Get the next puzzle (wrap around to the beginning if at the end)
+    const nextIndex = (this.currentTacticalPuzzleIndex + 1) % TACTICAL_PUZZLES.length;
+    const nextPuzzle = TACTICAL_PUZZLES[nextIndex];
+    this.startTacticalPuzzle(nextPuzzle);
+  }
 }
 
 // Initialize the app manager
@@ -769,7 +879,8 @@ window.addEventListener('resize', () => {
     const canvases = [
       document.getElementById('chess-board') as HTMLCanvasElement,
       document.getElementById('opening-board') as HTMLCanvasElement,
-      document.getElementById('puzzle-board') as HTMLCanvasElement
+      document.getElementById('puzzle-board') as HTMLCanvasElement,
+      document.getElementById('tactical-puzzle-board') as HTMLCanvasElement
     ];
 
     canvases.forEach(canvas => {
