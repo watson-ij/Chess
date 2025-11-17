@@ -21,6 +21,10 @@ class ChessApp {
   private isAIThinking: boolean = false;
   private moveHistoryUCI: string[] = []; // UCI move history for Stockfish
 
+  // Move navigation
+  private currentMoveIndex: number = -1; // -1 means current position (end of game)
+  private isReviewMode: boolean = false; // True when viewing move history
+
   // DOM elements
   private setupPanel: HTMLElement;
   private chessGame: HTMLElement;
@@ -38,6 +42,7 @@ class ChessApp {
     // Note: renderer is created later in startChessGame() when container is visible
 
     this.setupSetupPanelListeners();
+    this.setupNavigationListeners();
   }
 
 
@@ -81,6 +86,29 @@ class ChessApp {
     }
   }
 
+  /**
+   * Setup move navigation listeners
+   */
+  private setupNavigationListeners(): void {
+    const navStart = document.getElementById('nav-start');
+    const navPrev = document.getElementById('nav-prev');
+    const navNext = document.getElementById('nav-next');
+    const navEnd = document.getElementById('nav-end');
+
+    if (navStart) {
+      navStart.addEventListener('click', () => this.navigateToStart());
+    }
+    if (navPrev) {
+      navPrev.addEventListener('click', () => this.navigateToPrevious());
+    }
+    if (navNext) {
+      navNext.addEventListener('click', () => this.navigateToNext());
+    }
+    if (navEnd) {
+      navEnd.addEventListener('click', () => this.navigateToEnd());
+    }
+  }
+
 
   /**
    * Cleanup resources
@@ -97,6 +125,8 @@ class ChessApp {
     this.isAIThinking = false;
     this.moveHistoryUCI = [];
     this.selectedSquare = null;
+    this.currentMoveIndex = -1;
+    this.isReviewMode = false;
   }
 
   /**
@@ -124,6 +154,11 @@ class ChessApp {
     this.selectedSquare = null;
     this.moveHistoryUCI = [];
     this.renderer.clearHighlights();
+
+    // Reset navigation state
+    const moves = this.engine.getMoveHistory();
+    this.currentMoveIndex = moves.length > 0 ? moves.length - 1 : -1;
+    this.isReviewMode = false;
 
     // Setup event listeners
     this.setupChessEventListeners();
@@ -252,6 +287,11 @@ class ChessApp {
   private async handleChessClick(event: MouseEvent): Promise<void> {
     if (this.engine.isGameOver() || this.isAIThinking || !this.renderer) return;
 
+    // Don't allow moves when in review mode
+    if (this.isReviewMode) {
+      return;
+    }
+
     // In AI mode, only allow player to move their pieces
     if (this.isAIMode && this.engine.getCurrentTurn() !== this.playerColor) {
       return;
@@ -277,6 +317,12 @@ class ChessApp {
         this.selectedSquare = null;
         this.renderer.setSelectedSquare(null);
         this.renderer.setHighlightedSquares([]);
+
+        // Update current move index to the latest move
+        const moves = this.engine.getMoveHistory();
+        this.currentMoveIndex = moves.length - 1;
+        this.isReviewMode = false;
+
         this.render();
         this.updateUI();
 
@@ -329,6 +375,12 @@ class ChessApp {
 
       if (success) {
         this.moveHistoryUCI.push(bestMove);
+
+        // Update current move index to the latest move
+        const moves = this.engine.getMoveHistory();
+        this.currentMoveIndex = moves.length - 1;
+        this.isReviewMode = false;
+
         this.render();
         this.updateUI();
       }
@@ -398,6 +450,95 @@ class ChessApp {
   }
 
   /**
+   * Navigate to start position
+   */
+  private navigateToStart(): void {
+    this.currentMoveIndex = -1;
+    this.isReviewMode = true;
+    this.renderBoardAtMove(this.currentMoveIndex);
+    this.updateMoveHistory();
+    this.updateNavigationButtons();
+  }
+
+  /**
+   * Navigate to previous move
+   */
+  private navigateToPrevious(): void {
+    if (this.currentMoveIndex > -1) {
+      this.currentMoveIndex--;
+      this.isReviewMode = true;
+      this.renderBoardAtMove(this.currentMoveIndex);
+      this.updateMoveHistory();
+      this.updateNavigationButtons();
+    }
+  }
+
+  /**
+   * Navigate to next move
+   */
+  private navigateToNext(): void {
+    const moves = this.engine.getMoveHistory();
+    if (this.currentMoveIndex < moves.length - 1) {
+      this.currentMoveIndex++;
+      this.isReviewMode = this.currentMoveIndex < moves.length - 1;
+      this.renderBoardAtMove(this.currentMoveIndex);
+      this.updateMoveHistory();
+      this.updateNavigationButtons();
+    }
+  }
+
+  /**
+   * Navigate to end position (current game state)
+   */
+  private navigateToEnd(): void {
+    const moves = this.engine.getMoveHistory();
+    this.currentMoveIndex = moves.length - 1;
+    this.isReviewMode = false;
+    this.render();
+    this.updateMoveHistory();
+    this.updateNavigationButtons();
+  }
+
+  /**
+   * Navigate to specific move
+   */
+  private navigateToMove(moveIndex: number): void {
+    const moves = this.engine.getMoveHistory();
+    if (moveIndex >= -1 && moveIndex < moves.length) {
+      this.currentMoveIndex = moveIndex;
+      this.isReviewMode = moveIndex < moves.length - 1;
+      this.renderBoardAtMove(moveIndex);
+      this.updateMoveHistory();
+      this.updateNavigationButtons();
+    }
+  }
+
+  /**
+   * Render board at specific move index
+   */
+  private renderBoardAtMove(moveIndex: number): void {
+    if (!this.renderer) return;
+    const board = this.engine.getBoardAtMove(moveIndex);
+    this.renderer.render(board);
+  }
+
+  /**
+   * Update navigation button states
+   */
+  private updateNavigationButtons(): void {
+    const moves = this.engine.getMoveHistory();
+    const navStart = document.getElementById('nav-start') as HTMLButtonElement;
+    const navPrev = document.getElementById('nav-prev') as HTMLButtonElement;
+    const navNext = document.getElementById('nav-next') as HTMLButtonElement;
+    const navEnd = document.getElementById('nav-end') as HTMLButtonElement;
+
+    if (navStart) navStart.disabled = this.currentMoveIndex === -1;
+    if (navPrev) navPrev.disabled = this.currentMoveIndex === -1;
+    if (navNext) navNext.disabled = this.currentMoveIndex === moves.length - 1;
+    if (navEnd) navEnd.disabled = this.currentMoveIndex === moves.length - 1;
+  }
+
+  /**
    * Update move history
    */
   private updateMoveHistory(): void {
@@ -423,20 +564,40 @@ class ChessApp {
       const whiteSpan = document.createElement('span');
       whiteSpan.className = 'move white';
       whiteSpan.textContent = whiteMove.notation || '?';
+      whiteSpan.dataset.moveIndex = String(i);
+      if (this.currentMoveIndex === i) {
+        whiteSpan.classList.add('active');
+      }
+      whiteSpan.addEventListener('click', () => this.navigateToMove(i));
       movePair.appendChild(whiteSpan);
 
       if (blackMove) {
         const blackSpan = document.createElement('span');
         blackSpan.className = 'move black';
         blackSpan.textContent = blackMove.notation || '?';
+        blackSpan.dataset.moveIndex = String(i + 1);
+        if (this.currentMoveIndex === i + 1) {
+          blackSpan.classList.add('active');
+        }
+        blackSpan.addEventListener('click', () => this.navigateToMove(i + 1));
         movePair.appendChild(blackSpan);
       }
 
       movesList.appendChild(movePair);
     }
 
-    // Scroll to bottom
-    movesList.scrollTop = movesList.scrollHeight;
+    // Update navigation buttons
+    this.updateNavigationButtons();
+
+    // Scroll to active move or bottom
+    if (this.currentMoveIndex >= 0) {
+      const activeMove = movesList.querySelector('.move.active');
+      if (activeMove) {
+        activeMove.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    } else {
+      movesList.scrollTop = movesList.scrollHeight;
+    }
   }
 
 }
