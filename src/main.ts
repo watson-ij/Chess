@@ -362,56 +362,65 @@ class AppManager {
   private openingApp: OpeningApp | null = null;
 
   constructor() {
-    this.setupModeButtons();
-    this.setMode('play');
+    this.setupNavigationButtons();
+    this.showLandingPage();
   }
 
-  private setupModeButtons(): void {
-    const playBtn = document.getElementById('mode-play');
-    const openingsBtn = document.getElementById('mode-openings');
+  private setupNavigationButtons(): void {
+    // Mode selection buttons on landing page
+    const selectPlayBtn = document.getElementById('select-play');
+    const selectOpeningsBtn = document.getElementById('select-openings');
 
-    playBtn?.addEventListener('click', () => this.setMode('play'));
-    openingsBtn?.addEventListener('click', () => this.setMode('openings'));
+    selectPlayBtn?.addEventListener('click', () => this.showPlayMode());
+    selectOpeningsBtn?.addEventListener('click', () => this.showOpeningsMode());
 
-    // Add back button from view mode
-    document.getElementById('btn-repository-from-view')?.addEventListener('click', () => {
-      if (this.openingApp) {
-        const event = new MouseEvent('click');
-        document.getElementById('btn-repository')?.dispatchEvent(event);
-      }
-    });
+    // Back buttons
+    const backFromPlayBtn = document.getElementById('back-from-play');
+    const backFromOpeningsBtn = document.getElementById('back-from-openings');
+
+    backFromPlayBtn?.addEventListener('click', () => this.showLandingPage());
+    backFromOpeningsBtn?.addEventListener('click', () => this.showLandingPage());
   }
 
-  private setMode(mode: 'play' | 'openings'): void {
-    // Update button states
-    const playBtn = document.getElementById('mode-play');
-    const openingsBtn = document.getElementById('mode-openings');
-
-    playBtn?.classList.toggle('active', mode === 'play');
-    openingsBtn?.classList.toggle('active', mode === 'openings');
-
-    // Show/hide containers
+  private showLandingPage(): void {
+    const landingPage = document.getElementById('landing-page');
     const playContainer = document.getElementById('play-container');
     const openingsContainer = document.getElementById('openings-container');
 
-    if (mode === 'play') {
-      playContainer?.classList.remove('hidden');
-      openingsContainer?.classList.add('hidden');
+    landingPage?.classList.remove('hidden');
+    playContainer?.classList.add('hidden');
+    openingsContainer?.classList.add('hidden');
+  }
 
-      // Initialize chess app if not already done
-      if (!this.chessApp) {
-        this.chessApp = new ChessApp();
-      }
-    } else {
-      playContainer?.classList.add('hidden');
-      openingsContainer?.classList.remove('hidden');
+  private showPlayMode(): void {
+    const landingPage = document.getElementById('landing-page');
+    const playContainer = document.getElementById('play-container');
+    const openingsContainer = document.getElementById('openings-container');
 
-      // Initialize opening app if not already done
-      if (!this.openingApp) {
-        const canvas = document.getElementById('opening-board') as HTMLCanvasElement;
-        if (canvas) {
-          this.openingApp = new OpeningApp(canvas);
-        }
+    landingPage?.classList.add('hidden');
+    playContainer?.classList.remove('hidden');
+    openingsContainer?.classList.add('hidden');
+
+    // Initialize chess app if not already done
+    if (!this.chessApp) {
+      this.chessApp = new ChessApp();
+    }
+  }
+
+  private showOpeningsMode(): void {
+    const landingPage = document.getElementById('landing-page');
+    const playContainer = document.getElementById('play-container');
+    const openingsContainer = document.getElementById('openings-container');
+
+    landingPage?.classList.add('hidden');
+    playContainer?.classList.add('hidden');
+    openingsContainer?.classList.remove('hidden');
+
+    // Initialize opening app if not already done
+    if (!this.openingApp) {
+      const canvas = document.getElementById('opening-board') as HTMLCanvasElement;
+      if (canvas) {
+        this.openingApp = new OpeningApp(canvas);
       }
     }
   }

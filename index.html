@@ -7,16 +7,29 @@
 </head>
 <body>
   <div id="app">
-    <header>
-      <h1>Chess</h1>
-      <div id="mode-selector">
-        <button id="mode-play" class="mode-btn active">Play Chess</button>
-        <button id="mode-openings" class="mode-btn">Opening Repository</button>
+    <!-- Landing Page / Mode Selection -->
+    <div id="landing-page">
+      <h1>Chess Application</h1>
+      <div id="mode-selection">
+        <button id="select-play" class="mode-select-btn">
+          <div class="mode-icon">♔</div>
+          <h2>Play Chess</h2>
+          <p>Play against another player or AI</p>
+        </button>
+        <button id="select-openings" class="mode-select-btn">
+          <div class="mode-icon">📚</div>
+          <h2>Opening Repository</h2>
+          <p>Study and practice chess openings</p>
+        </button>
       </div>
-    </header>
+    </div>
 
     <!-- Play Chess Mode -->
-    <div id="play-container">
+    <div id="play-container" class="hidden">
+      <div class="page-header">
+        <button id="back-from-play" class="btn-back">← Back to Menu</button>
+        <h1>Play Chess</h1>
+      </div>
       <!-- Game Setup Panel -->
       <div id="setup-panel">
         <div class="setup-section">
@@ -111,6 +124,10 @@
 
     <!-- Opening Repository Mode -->
     <div id="openings-container" class="hidden">
+      <div class="page-header">
+        <button id="back-from-openings" class="btn-back">← Back to Menu</button>
+        <h1>Opening Repository</h1>
+      </div>
       <div id="openings-layout">
         <canvas id="opening-board" width="640" height="640"></canvas>
         <div id="openings-panel">
