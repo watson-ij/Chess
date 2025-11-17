@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess App</title>
+  <title>Chess App - Play & Learn</title>
 </head>
 <body>
   <div id="app">
@@ -20,6 +20,11 @@
           <div class="mode-icon">📚</div>
           <h2>Opening Repository</h2>
           <p>Study and practice chess openings</p>
+        </button>
+        <button id="select-endgames" class="mode-select-btn">
+          <div class="mode-icon">🎯</div>
+          <h2>Endgame Training</h2>
+          <p>Master classic endgame positions</p>
         </button>
       </div>
     </div>
@@ -204,6 +209,53 @@
             </div>
           </div>
 
+        </div>
+      </div>
+    </div>
+
+    <!-- Endgame Training Mode -->
+    <div id="endgames-container" class="hidden">
+      <div class="page-header">
+        <button id="back-from-endgames" class="btn-back">← Back to Menu</button>
+        <h1>Endgame Training</h1>
+      </div>
+
+      <!-- Puzzle Selection -->
+      <div id="puzzle-selection">
+        <div id="puzzle-selector-container"></div>
+      </div>
+
+      <!-- Puzzle Play Mode -->
+      <div id="puzzle-game" class="hidden">
+        <button id="back-to-puzzles" class="btn-back">← Back to Puzzles</button>
+        <div id="puzzle-container">
+          <canvas id="puzzle-board" width="640" height="640"></canvas>
+          <div id="puzzle-panel">
+            <div id="puzzle-info">
+              <h2 id="puzzle-title"></h2>
+              <p id="puzzle-description"></p>
+              <p class="puzzle-objective" id="puzzle-objective"></p>
+            </div>
+
+            <div id="puzzle-feedback" class="feedback"></div>
+
+            <div id="puzzle-controls">
+              <button id="hint-button" class="control-btn">💡 Get Hint</button>
+              <button id="reset-button" class="control-btn">🔄 Reset</button>
+            </div>
+
+            <div id="puzzle-hints-section">
+              <h3>Hints Used</h3>
+              <div id="puzzle-hints"></div>
+            </div>
+
+            <div id="move-history-puzzle">
+              <h3>Moves</h3>
+              <div id="move-list"></div>
+            </div>
+
+            <div id="educational" style="display: none;"></div>
+          </div>
         </div>
       </div>
     </div>

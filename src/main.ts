@@ -3,43 +3,97 @@ import { ChessEngine } from './ChessEngine';
 import { ChessBoardRenderer } from './ChessBoardRenderer';
 import { StockfishAI } from './StockfishAI';
 import { OpeningApp } from './OpeningApp';
+import { PuzzleMode } from './PuzzleMode';
+import { PuzzleSelector } from './PuzzleSelector';
 import type { Position, PieceColor } from './types';
+import type { EndgamePuzzle } from './EndgameTypes';
 
 class ChessApp {
   private engine: ChessEngine;
   private renderer: ChessBoardRenderer;
   private selectedSquare: Position | null = null;
   private canvas: HTMLCanvasElement;
+
+  // AI mode components
   private ai: StockfishAI | null = null;
   private isAIMode: boolean = false;
   private playerColor: PieceColor = 'white';
   private isAIThinking: boolean = false;
   private moveHistoryUCI: string[] = []; // UCI move history for Stockfish
 
-  constructor() {
-    this.engine = new ChessEngine();
+  // Puzzle mode components
+  private puzzleSelector: PuzzleSelector | null = null;
+  private puzzleMode: PuzzleMode | null = null;
 
+  // DOM elements
+  private mainMenu: HTMLElement;
+  private setupPanel: HTMLElement;
+  private chessGame: HTMLElement;
+  private puzzleSelection: HTMLElement;
+  private puzzleGame: HTMLElement;
+
+  constructor() {
+    // Get DOM elements
+    this.mainMenu = document.getElementById('main-menu')!;
+    this.setupPanel = document.getElementById('setup-panel')!;
+    this.chessGame = document.getElementById('chess-game')!;
+    this.puzzleSelection = document.getElementById('puzzle-selection')!;
+    this.puzzleGame = document.getElementById('puzzle-game')!;
+
+    // Initialize chess components
+    this.engine = new ChessEngine();
     const canvas = document.getElementById('chess-board') as HTMLCanvasElement;
     if (!canvas) throw new Error('Canvas not found');
-
     this.canvas = canvas;
     this.renderer = new ChessBoardRenderer(canvas);
 
+    this.setupMenuListeners();
     this.setupSetupPanelListeners();
+    this.showMainMenu();
   }
 
-  private setupSetupPanelListeners(): void {
-    // Game mode selection
-    const gameModeRadios = document.querySelectorAll<HTMLInputElement>('input[name="game-mode"]');
-    gameModeRadios.forEach(radio => {
-      radio.addEventListener('change', () => {
-        const aiSettings = document.getElementById('ai-settings');
-        if (aiSettings) {
-          aiSettings.style.display = radio.value === 'ai' ? 'block' : 'none';
-        }
-      });
+  /**
+   * Setup main menu event listeners
+   */
+  private setupMenuListeners(): void {
+    // Play Chess button (PvP)
+    document.getElementById('play-chess-btn')?.addEventListener('click', () => {
+      this.startChessGame(false);
     });
 
+    // Play vs AI button
+    document.getElementById('play-ai-btn')?.addEventListener('click', () => {
+      this.showAISetup();
+    });
+
+    // Endgame Training button
+    document.getElementById('endgame-training-btn')?.addEventListener('click', () => {
+      this.startPuzzleSelection();
+    });
+
+    // Back to menu buttons
+    document.getElementById('back-to-menu-setup')?.addEventListener('click', () => {
+      this.showMainMenu();
+    });
+
+    document.getElementById('back-to-menu-chess')?.addEventListener('click', () => {
+      this.cleanup();
+      this.showMainMenu();
+    });
+
+    document.getElementById('back-to-menu-puzzle')?.addEventListener('click', () => {
+      this.showMainMenu();
+    });
+
+    document.getElementById('back-to-puzzles')?.addEventListener('click', () => {
+      this.startPuzzleSelection();
+    });
+  }
+
+  /**
+   * Setup AI setup panel listeners
+   */
+  private setupSetupPanelListeners(): void {
     // Position mode selection
     const positionModeRadios = document.querySelectorAll<HTMLInputElement>('input[name="position-mode"]');
     positionModeRadios.forEach(radio => {
@@ -55,7 +109,7 @@ class ChessApp {
     // Start game button
     const startButton = document.getElementById('start-game');
     if (startButton) {
-      startButton.addEventListener('click', () => this.startGame());
+      startButton.addEventListener('click', () => this.startGameFromSetup());
     }
 
     // Reset game button
@@ -65,28 +119,96 @@ class ChessApp {
     }
   }
 
-  private setupEventListeners(): void {
-    this.canvas.addEventListener('click', (e) => this.handleClick(e));
+  /**
+   * Show main menu
+   */
+  private showMainMenu(): void {
+    this.mainMenu.style.display = 'block';
+    this.setupPanel.style.display = 'none';
+    this.chessGame.style.display = 'none';
+    this.puzzleSelection.style.display = 'none';
+    this.puzzleGame.style.display = 'none';
+
+    // Cleanup
+    this.cleanup();
   }
 
-  private async startGame(): Promise<void> {
+  /**
+   * Show AI setup panel
+   */
+  private showAISetup(): void {
+    this.mainMenu.style.display = 'none';
+    this.setupPanel.style.display = 'block';
+    this.chessGame.style.display = 'none';
+    this.puzzleSelection.style.display = 'none';
+    this.puzzleGame.style.display = 'none';
+  }
+
+  /**
+   * Cleanup resources
+   */
+  private cleanup(): void {
+    // Cleanup AI
+    if (this.ai) {
+      this.ai.destroy();
+      this.ai = null;
+    }
+
+    // Cleanup puzzle components
+    if (this.puzzleSelector) {
+      this.puzzleSelector.clear();
+      this.puzzleSelector = null;
+    }
+    if (this.puzzleMode) {
+      this.puzzleMode = null;
+    }
+
+    // Reset state
+    this.isAIMode = false;
+    this.isAIThinking = false;
+    this.moveHistoryUCI = [];
+    this.selectedSquare = null;
+  }
+
+  /**
+   * Start chess game (PvP mode)
+   */
+  private startChessGame(withAI: boolean): void {
+    this.isAIMode = withAI;
+
+    this.mainMenu.style.display = 'none';
+    this.setupPanel.style.display = 'none';
+    this.chessGame.style.display = 'block';
+    this.puzzleSelection.style.display = 'none';
+    this.puzzleGame.style.display = 'none';
+
+    // Reset the game
+    this.engine = new ChessEngine();
+    this.selectedSquare = null;
+    this.moveHistoryUCI = [];
+    this.renderer.clearHighlights();
+
+    // Setup event listeners
+    this.setupChessEventListeners();
+    this.render();
+    this.updateUI();
+  }
+
+  /**
+   * Start game from AI setup panel
+   */
+  private async startGameFromSetup(): Promise<void> {
     try {
-      // Get game mode
-      const gameModeRadio = document.querySelector<HTMLInputElement>('input[name="game-mode"]:checked');
-      this.isAIMode = gameModeRadio?.value === 'ai';
+      // Get AI settings
+      const playerColorSelect = document.getElementById('player-color') as HTMLSelectElement;
+      this.playerColor = playerColorSelect?.value as PieceColor || 'white';
 
-      if (this.isAIMode) {
-        // Get AI settings
-        const playerColorSelect = document.getElementById('player-color') as HTMLSelectElement;
-        this.playerColor = playerColorSelect?.value as PieceColor || 'white';
+      const aiDifficultySelect = document.getElementById('ai-difficulty') as HTMLSelectElement;
+      const difficulty = parseInt(aiDifficultySelect?.value || '20');
 
-        const aiDifficultySelect = document.getElementById('ai-difficulty') as HTMLSelectElement;
-        const difficulty = parseInt(aiDifficultySelect?.value || '20');
-
-        // Initialize AI
-        this.ai = new StockfishAI();
-        this.ai.setSkillLevel(difficulty);
-      }
+      // Initialize AI
+      this.ai = new StockfishAI();
+      this.ai.setSkillLevel(difficulty);
 
       // Get position mode
       const positionModeRadio = document.querySelector<HTMLInputElement>('input[name="position-mode"]:checked');
@@ -114,31 +236,21 @@ class ChessApp {
               alert('Invalid PGN. Please check and try again.');
               return;
             }
-            // Build UCI move history from PGN
-            this.buildUCIHistoryFromMoves();
           } catch (error) {
             alert('Error loading PGN. Please check and try again.');
             return;
           }
         }
+      } else {
+        // Standard position
+        this.engine = new ChessEngine();
       }
 
-      // Show game, hide setup
-      const setupPanel = document.getElementById('setup-panel');
-      const gameContainer = document.getElementById('game-container');
-      const resetButton = document.getElementById('reset-game');
-
-      if (setupPanel) setupPanel.style.display = 'none';
-      if (gameContainer) gameContainer.style.display = 'flex';
-      if (resetButton) resetButton.style.display = 'inline-block';
-
-      // Setup game event listeners
-      this.setupEventListeners();
-      this.render();
-      this.updateUI();
+      // Start AI game
+      this.startChessGame(true);
 
       // If AI plays first (player is black), make AI move
-      if (this.isAIMode && this.playerColor === 'black' && !this.engine.isGameOver()) {
+      if (this.playerColor === 'black' && !this.engine.isGameOver()) {
         await this.makeAIMove();
       }
     } catch (error) {
@@ -147,46 +259,38 @@ class ChessApp {
     }
   }
 
-  private buildUCIHistoryFromMoves(): void {
-    // This builds the UCI move history from the current move history
-    // For simplicity, we'll track UCI moves as we make moves during gameplay
-    // For loaded PGN, we won't have perfect UCI history, but Stockfish can work with FEN
-    this.moveHistoryUCI = [];
-  }
-
+  /**
+   * Reset game and return to setup
+   */
   private resetGame(): void {
-    // Cleanup AI
-    if (this.ai) {
-      this.ai.destroy();
-      this.ai = null;
-    }
-
-    // Reset state
-    this.isAIMode = false;
-    this.isAIThinking = false;
-    this.moveHistoryUCI = [];
-    this.selectedSquare = null;
-
-    // Show setup, hide game
-    const setupPanel = document.getElementById('setup-panel');
-    const gameContainer = document.getElementById('game-container');
-    const resetButton = document.getElementById('reset-game');
-
-    if (setupPanel) setupPanel.style.display = 'block';
-    if (gameContainer) gameContainer.style.display = 'none';
-    if (resetButton) resetButton.style.display = 'none';
+    this.cleanup();
+    this.showAISetup();
 
     // Reset inputs
     const fenInput = document.getElementById('fen-input') as HTMLInputElement;
     const pgnInput = document.getElementById('pgn-input') as HTMLTextAreaElement;
     if (fenInput) fenInput.value = '';
     if (pgnInput) pgnInput.value = '';
-
-    // Initialize new game engine
-    this.engine = new ChessEngine();
   }
 
-  private async handleClick(event: MouseEvent): Promise<void> {
+  /**
+   * Setup chess game event listeners
+   */
+  private setupChessEventListeners(): void {
+    // Remove old listeners by cloning the canvas
+    const oldCanvas = this.canvas;
+    const newCanvas = oldCanvas.cloneNode(true) as HTMLCanvasElement;
+    oldCanvas.parentNode?.replaceChild(newCanvas, oldCanvas);
+    this.canvas = newCanvas;
+    this.renderer = new ChessBoardRenderer(newCanvas);
+
+    this.canvas.addEventListener('click', (e) => this.handleChessClick(e));
+  }
+
+  /**
+   * Handle chess game click
+   */
+  private async handleChessClick(event: MouseEvent): Promise<void> {
     if (this.engine.isGameOver() || this.isAIThinking) return;
 
     // In AI mode, only allow player to move their pieces
@@ -206,8 +310,10 @@ class ChessApp {
 
       if (success) {
         // Track UCI move for AI
-        const uciMove = StockfishAI.toUCIMove(this.selectedSquare, clickedSquare);
-        this.moveHistoryUCI.push(uciMove);
+        if (this.isAIMode) {
+          const uciMove = StockfishAI.toUCIMove(this.selectedSquare, clickedSquare);
+          this.moveHistoryUCI.push(uciMove);
+        }
 
         this.selectedSquare = null;
         this.renderer.setSelectedSquare(null);
@@ -241,6 +347,9 @@ class ChessApp {
     }
   }
 
+  /**
+   * Make AI move
+   */
   private async makeAIMove(): Promise<void> {
     if (!this.ai || this.isAIThinking) return;
 
@@ -272,6 +381,9 @@ class ChessApp {
     }
   }
 
+  /**
+   * Select a square
+   */
   private selectSquare(square: Position): void {
     this.selectedSquare = square;
     this.renderer.setSelectedSquare(square);
@@ -282,11 +394,17 @@ class ChessApp {
     this.render();
   }
 
+  /**
+   * Render the board
+   */
   private render(): void {
     const board = this.engine.getBoard();
     this.renderer.render(board);
   }
 
+  /**
+   * Update UI for chess game
+   */
   private updateUI(): void {
     // Update turn indicator
     const turnIndicator = document.getElementById('turn-indicator');
@@ -317,6 +435,9 @@ class ChessApp {
     this.updateMoveHistory();
   }
 
+  /**
+   * Update move history
+   */
   private updateMoveHistory(): void {
     const movesList = document.getElementById('moves-list');
     if (!movesList) return;
@@ -355,11 +476,53 @@ class ChessApp {
     // Scroll to bottom
     movesList.scrollTop = movesList.scrollHeight;
   }
+
+  /**
+   * Start puzzle selection
+   */
+  private startPuzzleSelection(): void {
+    this.mainMenu.style.display = 'none';
+    this.setupPanel.style.display = 'none';
+    this.chessGame.style.display = 'none';
+    this.puzzleSelection.style.display = 'block';
+    this.puzzleGame.style.display = 'none';
+
+    // Create puzzle selector
+    const container = document.getElementById('puzzle-selector-container')!;
+    this.puzzleSelector = new PuzzleSelector(container, (puzzle) => {
+      this.startPuzzle(puzzle);
+    });
+  }
+
+  /**
+   * Start a puzzle
+   */
+  private startPuzzle(puzzle: EndgamePuzzle): void {
+    this.mainMenu.style.display = 'none';
+    this.setupPanel.style.display = 'none';
+    this.chessGame.style.display = 'none';
+    this.puzzleSelection.style.display = 'none';
+    this.puzzleGame.style.display = 'block';
+
+    // Get puzzle canvas
+    const puzzleCanvas = document.getElementById('puzzle-board') as HTMLCanvasElement;
+    if (!puzzleCanvas) {
+      console.error('Puzzle canvas not found');
+      return;
+    }
+
+    // Create puzzle mode
+    this.puzzleMode = new PuzzleMode(puzzleCanvas, puzzle, () => {
+      this.startPuzzleSelection();
+    });
+  }
 }
 
 class AppManager {
   private chessApp: ChessApp | null = null;
   private openingApp: OpeningApp | null = null;
+  private puzzleSelector: PuzzleSelector | null = null;
+  private puzzleMode: PuzzleMode | null = null;
 
   constructor() {
     this.setupNavigationButtons();
@@ -370,36 +533,44 @@ class AppManager {
     // Mode selection buttons on landing page
     const selectPlayBtn = document.getElementById('select-play');
     const selectOpeningsBtn = document.getElementById('select-openings');
+    const selectEndgamesBtn = document.getElementById('select-endgames');
 
     selectPlayBtn?.addEventListener('click', () => this.showPlayMode());
     selectOpeningsBtn?.addEventListener('click', () => this.showOpeningsMode());
+    selectEndgamesBtn?.addEventListener('click', () => this.showEndgamesMode());
 
     // Back buttons
     const backFromPlayBtn = document.getElementById('back-from-play');
     const backFromOpeningsBtn = document.getElementById('back-from-openings');
+    const backFromEndgamesBtn = document.getElementById('back-from-endgames');
 
     backFromPlayBtn?.addEventListener('click', () => this.showLandingPage());
     backFromOpeningsBtn?.addEventListener('click', () => this.showLandingPage());
+    backFromEndgamesBtn?.addEventListener('click', () => this.showLandingPage());
   }
 
   private showLandingPage(): void {
     const landingPage = document.getElementById('landing-page');
     const playContainer = document.getElementById('play-container');
     const openingsContainer = document.getElementById('openings-container');
+    const endgamesContainer = document.getElementById('endgames-container');
 
     landingPage?.classList.remove('hidden');
     playContainer?.classList.add('hidden');
     openingsContainer?.classList.add('hidden');
+    endgamesContainer?.classList.add('hidden');
   }
 
   private showPlayMode(): void {
     const landingPage = document.getElementById('landing-page');
     const playContainer = document.getElementById('play-container');
     const openingsContainer = document.getElementById('openings-container');
+    const endgamesContainer = document.getElementById('endgames-container');
 
     landingPage?.classList.add('hidden');
     playContainer?.classList.remove('hidden');
     openingsContainer?.classList.add('hidden');
+    endgamesContainer?.classList.add('hidden');
 
     // Initialize chess app if not already done
     if (!this.chessApp) {
@@ -411,10 +582,12 @@ class AppManager {
     const landingPage = document.getElementById('landing-page');
     const playContainer = document.getElementById('play-container');
     const openingsContainer = document.getElementById('openings-container');
+    const endgamesContainer = document.getElementById('endgames-container');
 
     landingPage?.classList.add('hidden');
     playContainer?.classList.add('hidden');
     openingsContainer?.classList.remove('hidden');
+    endgamesContainer?.classList.add('hidden');
 
     // Initialize opening app if not already done
     if (!this.openingApp) {
@@ -422,6 +595,62 @@ class AppManager {
       if (canvas) {
         this.openingApp = new OpeningApp(canvas);
       }
+    }
+  }
+
+  private showEndgamesMode(): void {
+    const landingPage = document.getElementById('landing-page');
+    const playContainer = document.getElementById('play-container');
+    const openingsContainer = document.getElementById('openings-container');
+    const endgamesContainer = document.getElementById('endgames-container');
+
+    landingPage?.classList.add('hidden');
+    playContainer?.classList.add('hidden');
+    openingsContainer?.classList.add('hidden');
+    endgamesContainer?.classList.remove('hidden');
+
+    // Show puzzle selection, hide puzzle game
+    const puzzleSelection = document.getElementById('puzzle-selection');
+    const puzzleGame = document.getElementById('puzzle-game');
+    if (puzzleSelection) puzzleSelection.classList.remove('hidden');
+    if (puzzleGame) puzzleGame.classList.add('hidden');
+
+    // Initialize puzzle selector if not already done
+    if (!this.puzzleSelector) {
+      const container = document.getElementById('puzzle-selector-container');
+      if (container) {
+        this.puzzleSelector = new PuzzleSelector(container, (puzzle) => {
+          this.startPuzzle(puzzle);
+        });
+      }
+    }
+  }
+
+  private startPuzzle(puzzle: EndgamePuzzle): void {
+    // Hide puzzle selection, show puzzle game
+    const puzzleSelection = document.getElementById('puzzle-selection');
+    const puzzleGame = document.getElementById('puzzle-game');
+    if (puzzleSelection) puzzleSelection.classList.add('hidden');
+    if (puzzleGame) puzzleGame.classList.remove('hidden');
+
+    // Setup back to puzzles button
+    const backToPuzzlesBtn = document.getElementById('back-to-puzzles');
+    if (backToPuzzlesBtn) {
+      // Remove old listeners
+      const newBtn = backToPuzzlesBtn.cloneNode(true) as HTMLElement;
+      backToPuzzlesBtn.parentNode?.replaceChild(newBtn, backToPuzzlesBtn);
+
+      newBtn.addEventListener('click', () => {
+        this.showEndgamesMode();
+      });
+    }
+
+    // Create puzzle mode
+    const puzzleCanvas = document.getElementById('puzzle-board') as HTMLCanvasElement;
+    if (puzzleCanvas) {
+      this.puzzleMode = new PuzzleMode(puzzleCanvas, puzzle, () => {
+        this.showEndgamesMode();
+      });
     }
   }
 }
