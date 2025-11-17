@@ -12,7 +12,7 @@ export class StockfishAI {
     try {
       // Load Stockfish directly - the stockfish.js is self-contained worker code
       // No need for a wrapper worker
-      const base = import.meta.env.BASE_URL || '/';
+      const base = (import.meta as any).env?.BASE_URL || '/';
       const workerPath = `${base}stockfish.js`;
       this.worker = new Worker(workerPath);
 
