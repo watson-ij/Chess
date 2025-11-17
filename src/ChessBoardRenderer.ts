@@ -7,10 +7,47 @@ export class ChessBoardRenderer {
   private highlightedSquares: Position[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
-    const ctx = canvas.getContext('2d');
+    // Setup high DPI canvas
+    const displaySize = ChessBoardRenderer.setupHighDPICanvas(canvas);
+
+    const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('Could not get canvas context');
+
+    // Enable anti-aliasing and smoothing for high-quality rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
     this.ctx = ctx;
-    this.squareSize = canvas.width / 8;
+    // Use display size (not canvas.width which is scaled by DPR)
+    this.squareSize = displaySize / 8;
+  }
+
+  /**
+   * Setup canvas for high DPI displays (Retina, etc.)
+   * This scales the canvas backing store to match the device pixel ratio
+   * @returns The display width/height (should be same for square canvas)
+   */
+  private static setupHighDPICanvas(canvas: HTMLCanvasElement): number {
+    const dpr = window.devicePixelRatio || 1;
+
+    // Get the CSS size of the canvas
+    const rect = canvas.getBoundingClientRect();
+
+    // Set the canvas internal size to match the display size times DPR
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    // Scale the context to match the device pixel ratio
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.scale(dpr, dpr);
+    }
+
+    // Set the CSS size back to the original size
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+
+    return rect.width;
   }
 
   public render(board: Board): void {
@@ -418,52 +455,26 @@ export class ChessBoardRenderer {
     this.ctx.fill();
     this.ctx.stroke();
 
-    // Horse head - elegant curved profile
+    // Horse head - abstract elegant silhouette
     this.ctx.beginPath();
     // Start at neck
     this.ctx.moveTo(-size * 0.3, size * 0.1);
-    // Back of neck/mane
-    this.ctx.quadraticCurveTo(-size * 0.35, -size * 0.1, -size * 0.25, -size * 0.35);
-    // Top of head
-    this.ctx.quadraticCurveTo(-size * 0.15, -size * 0.55, 0, -size * 0.6);
-    // Ears
-    this.ctx.lineTo(size * 0.05, -size * 0.7);
-    this.ctx.lineTo(size * 0.15, -size * 0.55);
+    // Back of neck with curve
+    this.ctx.quadraticCurveTo(-size * 0.4, -size * 0.05, -size * 0.35, -size * 0.3);
+    // Top of head/poll
+    this.ctx.quadraticCurveTo(-size * 0.25, -size * 0.5, -size * 0.05, -size * 0.65);
+    // Ear
+    this.ctx.quadraticCurveTo(0, -size * 0.72, size * 0.05, -size * 0.65);
+    // Forehead
+    this.ctx.quadraticCurveTo(size * 0.15, -size * 0.55, size * 0.25, -size * 0.45);
     // Front of face/nose
-    this.ctx.quadraticCurveTo(size * 0.35, -size * 0.5, size * 0.45, -size * 0.3);
-    // Muzzle curve
-    this.ctx.quadraticCurveTo(size * 0.5, -size * 0.15, size * 0.45, 0);
-    // Jaw/chin
-    this.ctx.quadraticCurveTo(size * 0.35, size * 0.05, size * 0.2, size * 0.1);
+    this.ctx.quadraticCurveTo(size * 0.4, -size * 0.35, size * 0.48, -size * 0.15);
+    // Muzzle
+    this.ctx.quadraticCurveTo(size * 0.5, -size * 0.05, size * 0.45, 0.05);
+    // Jaw
+    this.ctx.quadraticCurveTo(size * 0.35, size * 0.1, size * 0.2, size * 0.1);
     this.ctx.closePath();
     this.ctx.fill();
-    this.ctx.stroke();
-
-    // Eye
-    this.ctx.fillStyle = outlineColor;
-    this.ctx.beginPath();
-    this.ctx.arc(size * 0.15, -size * 0.35, size * 0.07, 0, Math.PI * 2);
-    this.ctx.fill();
-
-    // Eye highlight
-    const eyeHighlight = isWhite ? '#ffffff' : '#888888';
-    this.ctx.fillStyle = eyeHighlight;
-    this.ctx.beginPath();
-    this.ctx.arc(size * 0.17, -size * 0.37, size * 0.03, 0, Math.PI * 2);
-    this.ctx.fill();
-
-    // Nostril
-    this.ctx.strokeStyle = outlineColor;
-    this.ctx.lineWidth = 1.5;
-    this.ctx.beginPath();
-    this.ctx.arc(size * 0.38, -size * 0.2, size * 0.04, 0, Math.PI);
-    this.ctx.stroke();
-
-    // Mane detail
-    this.ctx.lineWidth = 1.5;
-    this.ctx.beginPath();
-    this.ctx.moveTo(-size * 0.28, -size * 0.05);
-    this.ctx.quadraticCurveTo(-size * 0.32, -size * 0.2, -size * 0.22, -size * 0.3);
     this.ctx.stroke();
   }
 
