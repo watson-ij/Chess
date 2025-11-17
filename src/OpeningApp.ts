@@ -409,6 +409,7 @@ export class OpeningApp {
     // Reset engine and navigate to current node
     this.resetInputMode();
     this.updateInputModeUI();
+    this.buildInputTreeView();
   }
 
   private resetInputMode(): void {
@@ -442,6 +443,9 @@ export class OpeningApp {
         : '☆ Mark as Key';
       keyButton.classList.toggle('active', this.currentNode.isKeyPosition);
     }
+
+    // Rebuild tree view to show updated moves
+    this.buildInputTreeView();
   }
 
   private toggleKeyPosition(): void {
@@ -473,6 +477,22 @@ export class OpeningApp {
 
     const title = document.createElement('h2');
     title.textContent = this.currentOpening.name;
+    container.appendChild(title);
+
+    // Build tree recursively
+    const treeElement = this.buildTreeNode(this.currentOpening.rootNode, 0);
+    container.appendChild(treeElement);
+  }
+
+  private buildInputTreeView(): void {
+    const container = document.getElementById('input-tree-view');
+    if (!container || !this.currentOpening) return;
+
+    container.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Move Tree';
+    title.style.marginBottom = '10px';
     container.appendChild(title);
 
     // Build tree recursively
