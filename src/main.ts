@@ -579,3 +579,30 @@ class AppManager {
 
 // Initialize the app manager
 new AppManager();
+
+// Global resize handler for responsive canvas boards
+let resizeTimeout: number | null = null;
+
+window.addEventListener('resize', () => {
+  // Debounce resize events
+  if (resizeTimeout !== null) {
+    clearTimeout(resizeTimeout);
+  }
+
+  resizeTimeout = window.setTimeout(() => {
+    // Resize all visible canvas boards
+    const canvases = [
+      document.getElementById('chess-board') as HTMLCanvasElement,
+      document.getElementById('opening-board') as HTMLCanvasElement,
+      document.getElementById('puzzle-board') as HTMLCanvasElement
+    ];
+
+    canvases.forEach(canvas => {
+      if (canvas && canvas.offsetParent !== null) { // Check if canvas is visible
+        // Trigger a custom resize event that the renderer can listen to
+        const event = new CustomEvent('canvasResize');
+        canvas.dispatchEvent(event);
+      }
+    });
+  }, 250);
+});

@@ -3,15 +3,13 @@ import type { Board, Piece, Position } from './types';
 export class ChessBoardRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private squareSize: number;
+  private squareSize: number = 80; // Default, will be updated by resize()
   private selectedSquare: Position | null = null;
   private highlightedSquares: Position[] = [];
+  private currentBoard: Board | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-
-    // Setup high DPI canvas
-    const displaySize = ChessBoardRenderer.setupHighDPICanvas(canvas);
 
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('Could not get canvas context');
@@ -21,39 +19,21 @@ export class ChessBoardRenderer {
     ctx.imageSmoothingQuality = 'high';
 
     this.ctx = ctx;
-    // Use display size (not canvas.width which is scaled by DPR)
-    this.squareSize = displaySize / 8;
-  }
 
-  /**
-   * Setup canvas for high DPI displays (Retina, etc.)
-   * This scales the canvas backing store to match the device pixel ratio
-   * @returns The display width/height (should be same for square canvas)
-   */
-  private static setupHighDPICanvas(canvas: HTMLCanvasElement): number {
-    const dpr = window.devicePixelRatio || 1;
+    // Initialize canvas size
+    this.resize();
 
-    // Get the CSS size of the canvas
-    const rect = canvas.getBoundingClientRect();
-
-    // Set the canvas internal size to match the display size times DPR
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-
-    // Scale the context to match the device pixel ratio
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.scale(dpr, dpr);
-    }
-
-    // Set the CSS size back to the original size
-    canvas.style.width = rect.width + 'px';
-    canvas.style.height = rect.height + 'px';
-
-    return rect.width;
+    // Listen for custom resize events
+    this.canvas.addEventListener('canvasResize', () => {
+      this.resize();
+      if (this.currentBoard) {
+        this.render(this.currentBoard);
+      }
+    });
   }
 
   public render(board: Board): void {
+    this.currentBoard = board;
     this.drawBoard();
     this.drawHighlights();
     this.drawPieces(board);
@@ -555,5 +535,50 @@ export class ChessBoardRenderer {
   public setHighlights(selected: Position, legalMoves: Position[]): void {
     this.selectedSquare = selected;
     this.highlightedSquares = legalMoves;
+  }
+
+  /**
+   * Resize the canvas based on its container size
+   * This should be called when the window is resized or when the canvas is first created
+   */
+  public resize(): void {
+    // Get the container size
+    const container = this.canvas.parentElement;
+    if (!container) {
+      // Fallback to default size if no container
+      this.resizeToSize(640);
+      return;
+    }
+
+    // Calculate the maximum size the canvas can be
+    const containerWidth = container.clientWidth;
+    const maxSize = Math.min(containerWidth, 640); // Cap at 640px for large screens
+
+    this.resizeToSize(maxSize);
+  }
+
+  /**
+   * Resize the canvas to a specific size
+   */
+  private resizeToSize(size: number): void {
+    const dpr = window.devicePixelRatio || 1;
+
+    // Set the canvas CSS size
+    this.canvas.style.width = size + 'px';
+    this.canvas.style.height = size + 'px';
+
+    // Set the canvas backing store size (scaled by DPR for high-DPI displays)
+    this.canvas.width = size * dpr;
+    this.canvas.height = size * dpr;
+
+    // Scale the context to match the device pixel ratio
+    this.ctx.scale(dpr, dpr);
+
+    // Re-enable smoothing after scaling
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
+
+    // Update square size
+    this.squareSize = size / 8;
   }
 }
