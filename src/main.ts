@@ -23,7 +23,8 @@ class ChessApp {
     if (!canvas) throw new Error('Canvas not found');
 
     this.canvas = canvas;
-    this.renderer = new ChessBoardRenderer(canvas);
+    // Renderer will be initialized when game starts (when canvas is visible)
+    this.renderer = null as any;
 
     this.setupSetupPanelListeners();
   }
@@ -131,6 +132,11 @@ class ChessApp {
       if (setupPanel) setupPanel.style.display = 'none';
       if (gameContainer) gameContainer.style.display = 'flex';
       if (resetButton) resetButton.style.display = 'inline-block';
+
+      // Now that canvas is visible, initialize the renderer
+      if (!this.renderer) {
+        this.renderer = new ChessBoardRenderer(this.canvas);
+      }
 
       // Setup game event listeners
       this.setupEventListeners();
