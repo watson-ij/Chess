@@ -8,12 +8,90 @@
 <body>
   <div id="app">
     <h1>Chess</h1>
-    <div id="game-container">
+
+    <!-- Game Setup Panel -->
+    <div id="setup-panel">
+      <div class="setup-section">
+        <h3>Game Mode</h3>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="game-mode" value="pvp" checked>
+            Human vs Human
+          </label>
+          <label>
+            <input type="radio" name="game-mode" value="ai">
+            Human vs AI
+          </label>
+        </div>
+      </div>
+
+      <div id="ai-settings" class="setup-section" style="display: none;">
+        <h3>AI Settings</h3>
+        <div class="form-group">
+          <label for="player-color">Play as:</label>
+          <select id="player-color">
+            <option value="white">White</option>
+            <option value="black">Black</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="ai-difficulty">AI Difficulty:</label>
+          <select id="ai-difficulty">
+            <option value="1">Very Easy (1)</option>
+            <option value="3">Easy (3)</option>
+            <option value="5">Beginner (5)</option>
+            <option value="8">Intermediate (8)</option>
+            <option value="12">Advanced (12)</option>
+            <option value="15">Expert (15)</option>
+            <option value="18">Master (18)</option>
+            <option value="20" selected>Maximum (20)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="setup-section">
+        <h3>Starting Position</h3>
+        <div class="form-group">
+          <label>
+            <input type="radio" name="position-mode" value="standard" checked>
+            Standard Position
+          </label>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="radio" name="position-mode" value="fen">
+            From FEN String
+          </label>
+        </div>
+        <div id="fen-input-group" class="form-group" style="display: none;">
+          <input type="text" id="fen-input" placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">
+          <small>Enter a valid FEN string</small>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="radio" name="position-mode" value="pgn">
+            From PGN
+          </label>
+        </div>
+        <div id="pgn-input-group" class="form-group" style="display: none;">
+          <textarea id="pgn-input" rows="4" placeholder="1. e4 e5 2. Nf3 Nc6..."></textarea>
+          <small>Paste PGN and the game will be loaded to the last move</small>
+        </div>
+      </div>
+
+      <button id="start-game" class="btn-primary">Start Game</button>
+      <button id="reset-game" class="btn-secondary" style="display: none;">New Game</button>
+    </div>
+
+    <div id="game-container" style="display: none;">
       <canvas id="chess-board" width="640" height="640"></canvas>
       <div id="side-panel">
         <div id="game-info">
           <div id="turn-indicator"></div>
           <div id="game-status"></div>
+          <div id="ai-thinking" style="display: none;">
+            <span class="spinner"></span> AI is thinking...
+          </div>
         </div>
         <div id="move-history">
           <h3>Move History</h3>
