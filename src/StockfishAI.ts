@@ -10,10 +10,9 @@ export class StockfishAI {
 
   private async initializeEngine(): Promise<void> {
     try {
-      // Use stockfish.js from CDN as a fallback if npm package doesn't work well with Vite
-      const stockfishPath = 'https://cdn.jsdelivr.net/npm/stockfish@16.1.0/stockfish.js';
-
-      this.worker = new Worker(stockfishPath);
+      // Use local worker file to avoid CORS issues
+      // The worker is served from the same origin
+      this.worker = new Worker('/stockfish-worker.js');
 
       this.worker.onmessage = (event) => {
         const message = event.data;
@@ -28,13 +27,19 @@ export class StockfishAI {
             this.pendingCallback(move);
             this.pendingCallback = null;
           }
+        } else if (message.startsWith('error:')) {
+          console.error('Stockfish error:', message);
         }
+      };
+
+      this.worker.onerror = (error) => {
+        console.error('Stockfish worker error:', error);
       };
 
       // Initialize UCI protocol
       this.send('uci');
 
-      // Wait for ready signal
+      // Wait for ready signal with timeout
       await this.waitForReady();
 
       // Set initial skill level
@@ -42,6 +47,7 @@ export class StockfishAI {
 
     } catch (error) {
       console.error('Failed to initialize Stockfish:', error);
+      throw error;
     }
   }
 
