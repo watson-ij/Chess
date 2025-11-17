@@ -956,6 +956,15 @@ h1 {
   flex-wrap: wrap;
 }
 
+#input-tree-view-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
 /* Tree View */
 #tree-view-scroll {
   max-height: 550px;
