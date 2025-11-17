@@ -7,6 +7,8 @@ import { PuzzleMode } from './PuzzleMode';
 import { PuzzleSelector } from './PuzzleSelector';
 import type { Position, PieceColor } from './types';
 import type { EndgamePuzzle } from './EndgameTypes';
+import { TIMING, GAME_STATUS_COLORS } from './constants';
+import { Logger } from './Logger';
 
 class ChessApp {
   private engine: ChessEngine;
@@ -171,73 +173,123 @@ class ChessApp {
    */
   private async startGameFromSetup(): Promise<void> {
     try {
-      // Check which game mode is selected
-      const gameModeRadio = document.querySelector<HTMLInputElement>('input[name="game-mode"]:checked');
-      const gameMode = gameModeRadio?.value || 'pvp';
+      const gameMode = this.getSelectedGameMode();
+      const positionMode = this.getSelectedPositionMode();
 
-      // Get position mode
-      const positionModeRadio = document.querySelector<HTMLInputElement>('input[name="position-mode"]:checked');
-      const positionMode = positionModeRadio?.value || 'standard';
-
-      // Setup position
-      if (positionMode === 'fen') {
-        const fenInput = document.getElementById('fen-input') as HTMLInputElement;
-        const fen = fenInput?.value.trim();
-        if (fen) {
-          try {
-            this.engine.loadFEN(fen);
-          } catch (error) {
-            alert('Invalid FEN string. Please check and try again.');
-            return;
-          }
-        }
-      } else if (positionMode === 'pgn') {
-        const pgnInput = document.getElementById('pgn-input') as HTMLTextAreaElement;
-        const pgn = pgnInput?.value.trim();
-        if (pgn) {
-          try {
-            const success = this.engine.loadPGN(pgn);
-            if (!success) {
-              alert('Invalid PGN. Please check and try again.');
-              return;
-            }
-          } catch (error) {
-            alert('Error loading PGN. Please check and try again.');
-            return;
-          }
-        }
-      } else {
-        // Standard position
-        this.engine = new ChessEngine();
+      // Setup position based on user selection
+      if (!this.loadGamePosition(positionMode)) {
+        return; // Invalid position, error already shown to user
       }
 
-      // Start game based on mode
+      // Start game based on mode (AI or PvP)
       if (gameMode === 'ai') {
-        // Get AI settings
-        const playerColorSelect = document.getElementById('player-color') as HTMLSelectElement;
-        this.playerColor = playerColorSelect?.value as PieceColor || 'white';
-
-        const aiDifficultySelect = document.getElementById('ai-difficulty') as HTMLSelectElement;
-        const difficulty = parseInt(aiDifficultySelect?.value || '20');
-
-        // Initialize AI
-        this.ai = new StockfishAI();
-        this.ai.setSkillLevel(difficulty);
-
-        // Start AI game
-        this.startChessGame(true);
-
-        // If AI plays first (player is black), make AI move
-        if (this.playerColor === 'black' && !this.engine.isGameOver()) {
-          await this.makeAIMove();
-        }
+        await this.startAIGame();
       } else {
-        // Start PvP game
         this.startChessGame(false);
       }
     } catch (error) {
-      console.error('Error starting game:', error);
+      Logger.error('Error starting game', error);
       alert('Error starting game. Please try again.');
+    }
+  }
+
+  /**
+   * Get the selected game mode (AI or PvP)
+   */
+  private getSelectedGameMode(): string {
+    const gameModeRadio = document.querySelector<HTMLInputElement>('input[name="game-mode"]:checked');
+    return gameModeRadio?.value || 'pvp';
+  }
+
+  /**
+   * Get the selected position mode (standard, FEN, or PGN)
+   */
+  private getSelectedPositionMode(): string {
+    const positionModeRadio = document.querySelector<HTMLInputElement>('input[name="position-mode"]:checked');
+    return positionModeRadio?.value || 'standard';
+  }
+
+  /**
+   * Load game position based on selected mode
+   * @returns true if position loaded successfully, false otherwise
+   */
+  private loadGamePosition(positionMode: string): boolean {
+    if (positionMode === 'fen') {
+      return this.loadFENPosition();
+    } else if (positionMode === 'pgn') {
+      return this.loadPGNPosition();
+    } else {
+      // Standard position
+      this.engine = new ChessEngine();
+      return true;
+    }
+  }
+
+  /**
+   * Load position from FEN input
+   * @returns true if loaded successfully, false otherwise
+   */
+  private loadFENPosition(): boolean {
+    const fenInput = document.getElementById('fen-input') as HTMLInputElement;
+    const fen = fenInput?.value.trim();
+    if (fen) {
+      try {
+        this.engine.loadFEN(fen);
+        return true;
+      } catch (error) {
+        Logger.warn('Invalid FEN string', error);
+        alert('Invalid FEN string. Please check and try again.');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Load position from PGN input
+   * @returns true if loaded successfully, false otherwise
+   */
+  private loadPGNPosition(): boolean {
+    const pgnInput = document.getElementById('pgn-input') as HTMLTextAreaElement;
+    const pgn = pgnInput?.value.trim();
+    if (pgn) {
+      try {
+        const success = this.engine.loadPGN(pgn);
+        if (!success) {
+          alert('Invalid PGN. Please check and try again.');
+          return false;
+        }
+        return true;
+      } catch (error) {
+        Logger.warn('Error loading PGN', error);
+        alert('Error loading PGN. Please check and try again.');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Start an AI game with configured settings
+   */
+  private async startAIGame(): Promise<void> {
+    // Get AI settings
+    const playerColorSelect = document.getElementById('player-color') as HTMLSelectElement;
+    this.playerColor = playerColorSelect?.value as PieceColor || 'white';
+
+    const aiDifficultySelect = document.getElementById('ai-difficulty') as HTMLSelectElement;
+    const difficulty = parseInt(aiDifficultySelect?.value || '20');
+
+    // Initialize AI
+    this.ai = new StockfishAI();
+    this.ai.setSkillLevel(difficulty);
+
+    // Start AI game
+    this.startChessGame(true);
+
+    // If AI plays first (player is black), make AI move
+    if (this.playerColor === 'black' && !this.engine.isGameOver()) {
+      await this.makeAIMove();
     }
   }
 
@@ -364,7 +416,7 @@ class ChessApp {
 
     try {
       // Small delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, TIMING.AI_MOVE_DELAY_MS));
 
       const fen = this.engine.toFEN();
       const bestMove = await this.ai.getBestMove(fen, this.moveHistoryUCI);
@@ -385,7 +437,7 @@ class ChessApp {
         this.updateUI();
       }
     } catch (error) {
-      console.error('AI move error:', error);
+      Logger.error('AI move error', error);
     } finally {
       this.isAIThinking = false;
       if (aiThinkingEl) aiThinkingEl.style.display = 'none';
@@ -425,7 +477,7 @@ class ChessApp {
     if (turnIndicator) {
       const currentTurn = this.engine.getCurrentTurn();
       turnIndicator.textContent = `${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)} to move`;
-      turnIndicator.style.color = currentTurn === 'white' ? '#333' : '#666';
+      turnIndicator.style.color = currentTurn === 'white' ? GAME_STATUS_COLORS.WHITE_TURN : GAME_STATUS_COLORS.BLACK_TURN;
     }
 
     // Update game status
@@ -434,13 +486,13 @@ class ChessApp {
       const status = this.engine.getGameStatus();
       gameStatus.textContent = status;
       if (status.includes('Checkmate')) {
-        gameStatus.style.color = '#d32f2f';
+        gameStatus.style.color = GAME_STATUS_COLORS.CHECKMATE;
         gameStatus.style.fontWeight = 'bold';
       } else if (status.includes('Check')) {
-        gameStatus.style.color = '#f57c00';
+        gameStatus.style.color = GAME_STATUS_COLORS.CHECK;
         gameStatus.style.fontWeight = 'bold';
       } else if (status.includes('Stalemate')) {
-        gameStatus.style.color = '#1976d2';
+        gameStatus.style.color = GAME_STATUS_COLORS.STALEMATE;
         gameStatus.style.fontWeight = 'bold';
       }
     }
@@ -453,11 +505,7 @@ class ChessApp {
    * Navigate to start position
    */
   private navigateToStart(): void {
-    this.currentMoveIndex = -1;
-    this.isReviewMode = true;
-    this.renderBoardAtMove(this.currentMoveIndex);
-    this.updateMoveHistory();
-    this.updateNavigationButtons();
+    this.navigateToMoveIndex(-1);
   }
 
   /**
@@ -465,11 +513,7 @@ class ChessApp {
    */
   private navigateToPrevious(): void {
     if (this.currentMoveIndex > -1) {
-      this.currentMoveIndex--;
-      this.isReviewMode = true;
-      this.renderBoardAtMove(this.currentMoveIndex);
-      this.updateMoveHistory();
-      this.updateNavigationButtons();
+      this.navigateToMoveIndex(this.currentMoveIndex - 1);
     }
   }
 
@@ -479,11 +523,7 @@ class ChessApp {
   private navigateToNext(): void {
     const moves = this.engine.getMoveHistory();
     if (this.currentMoveIndex < moves.length - 1) {
-      this.currentMoveIndex++;
-      this.isReviewMode = this.currentMoveIndex < moves.length - 1;
-      this.renderBoardAtMove(this.currentMoveIndex);
-      this.updateMoveHistory();
-      this.updateNavigationButtons();
+      this.navigateToMoveIndex(this.currentMoveIndex + 1);
     }
   }
 
@@ -492,25 +532,49 @@ class ChessApp {
    */
   private navigateToEnd(): void {
     const moves = this.engine.getMoveHistory();
-    this.currentMoveIndex = moves.length - 1;
-    this.isReviewMode = false;
-    this.render();
-    this.updateMoveHistory();
-    this.updateNavigationButtons();
+    const lastMoveIndex = moves.length - 1;
+    this.navigateToMoveIndex(lastMoveIndex, false); // Not review mode, show current state
   }
 
   /**
-   * Navigate to specific move
+   * Navigate to specific move (public for click handlers)
    */
   private navigateToMove(moveIndex: number): void {
     const moves = this.engine.getMoveHistory();
     if (moveIndex >= -1 && moveIndex < moves.length) {
-      this.currentMoveIndex = moveIndex;
-      this.isReviewMode = moveIndex < moves.length - 1;
-      this.renderBoardAtMove(moveIndex);
-      this.updateMoveHistory();
-      this.updateNavigationButtons();
+      this.navigateToMoveIndex(moveIndex);
     }
+  }
+
+  /**
+   * Core navigation logic - navigate to a specific move index
+   * Consolidates duplicate code from all navigation methods
+   * @param moveIndex - The move index to navigate to (-1 for start position)
+   * @param autoDetectReviewMode - If true, automatically determine if in review mode
+   */
+  private navigateToMoveIndex(moveIndex: number, autoDetectReviewMode: boolean = true): void {
+    const moves = this.engine.getMoveHistory();
+    this.currentMoveIndex = moveIndex;
+
+    // Determine if we're in review mode
+    if (autoDetectReviewMode) {
+      this.isReviewMode = moveIndex < moves.length - 1;
+    } else {
+      this.isReviewMode = false;
+    }
+
+    // Render board at the specified move
+    if (moveIndex === moves.length - 1 && !this.isReviewMode) {
+      // At the end and not in review mode, show current state
+      this.render();
+    } else {
+      // Show board at specific move
+      this.renderBoardAtMove(moveIndex);
+    }
+
+    // Update UI
+    this.updateMoveHistory();
+    this.updateNavigationButtons();
   }
 
   /**
@@ -539,7 +603,7 @@ class ChessApp {
   }
 
   /**
-   * Update move history
+   * Update move history display
    */
   private updateMoveHistory(): void {
     const movesList = document.getElementById('moves-list');
@@ -548,54 +612,103 @@ class ChessApp {
     const moves = this.engine.getMoveHistory();
     movesList.innerHTML = '';
 
+    // Build move pairs (each pair contains move number + white move + black move)
     for (let i = 0; i < moves.length; i += 2) {
       const moveNumber = Math.floor(i / 2) + 1;
       const whiteMove = moves[i];
       const blackMove = moves[i + 1];
 
-      const movePair = document.createElement('div');
-      movePair.className = 'move-pair';
-
-      const numberSpan = document.createElement('span');
-      numberSpan.className = 'move-number';
-      numberSpan.textContent = `${moveNumber}.`;
-      movePair.appendChild(numberSpan);
-
-      const whiteSpan = document.createElement('span');
-      whiteSpan.className = 'move white';
-      whiteSpan.textContent = whiteMove.notation || '?';
-      whiteSpan.dataset.moveIndex = String(i);
-      if (this.currentMoveIndex === i) {
-        whiteSpan.classList.add('active');
-      }
-      whiteSpan.addEventListener('click', () => this.navigateToMove(i));
-      movePair.appendChild(whiteSpan);
-
-      if (blackMove) {
-        const blackSpan = document.createElement('span');
-        blackSpan.className = 'move black';
-        blackSpan.textContent = blackMove.notation || '?';
-        blackSpan.dataset.moveIndex = String(i + 1);
-        if (this.currentMoveIndex === i + 1) {
-          blackSpan.classList.add('active');
-        }
-        blackSpan.addEventListener('click', () => this.navigateToMove(i + 1));
-        movePair.appendChild(blackSpan);
-      }
-
+      const movePair = this.createMovePairElement(moveNumber, whiteMove, blackMove, i);
       movesList.appendChild(movePair);
     }
 
     // Update navigation buttons
     this.updateNavigationButtons();
 
-    // Scroll to active move or bottom
+    // Scroll to active move
+    this.scrollToActiveMove(movesList);
+  }
+
+  /**
+   * Create a move pair element (move number + white move + optional black move)
+   * @param moveNumber - The move number (1, 2, 3, ...)
+   * @param whiteMove - White's move
+   * @param blackMove - Black's move (optional)
+   * @param whiteIndex - Index of white's move in history
+   * @returns The move pair DOM element
+   */
+  private createMovePairElement(
+    moveNumber: number,
+    whiteMove: { notation?: string },
+    blackMove: { notation?: string } | undefined,
+    whiteIndex: number
+  ): HTMLElement {
+    const movePair = document.createElement('div');
+    movePair.className = 'move-pair';
+
+    // Move number
+    movePair.appendChild(this.createMoveNumberElement(moveNumber));
+
+    // White's move
+    movePair.appendChild(this.createMoveElement(whiteMove, whiteIndex, 'white'));
+
+    // Black's move (if exists)
+    if (blackMove) {
+      movePair.appendChild(this.createMoveElement(blackMove, whiteIndex + 1, 'black'));
+    }
+
+    return movePair;
+  }
+
+  /**
+   * Create a move number element
+   */
+  private createMoveNumberElement(moveNumber: number): HTMLElement {
+    const numberSpan = document.createElement('span');
+    numberSpan.className = 'move-number';
+    numberSpan.textContent = `${moveNumber}.`;
+    return numberSpan;
+  }
+
+  /**
+   * Create a clickable move element
+   * @param move - The move object
+   * @param moveIndex - Index in move history
+   * @param color - 'white' or 'black'
+   * @returns The move DOM element
+   */
+  private createMoveElement(
+    move: { notation?: string },
+    moveIndex: number,
+    color: 'white' | 'black'
+  ): HTMLElement {
+    const moveSpan = document.createElement('span');
+    moveSpan.className = `move ${color}`;
+    moveSpan.textContent = move.notation || '?';
+    moveSpan.dataset.moveIndex = String(moveIndex);
+
+    // Highlight if this is the current move
+    if (this.currentMoveIndex === moveIndex) {
+      moveSpan.classList.add('active');
+    }
+
+    // Make clickable to navigate to this move
+    moveSpan.addEventListener('click', () => this.navigateToMove(moveIndex));
+
+    return moveSpan;
+  }
+
+  /**
+   * Scroll to the active move in the move list
+   */
+  private scrollToActiveMove(movesList: HTMLElement): void {
     if (this.currentMoveIndex >= 0) {
       const activeMove = movesList.querySelector('.move.active');
       if (activeMove) {
-        activeMove.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        activeMove.scrollIntoView({ block: 'nearest', behavior: TIMING.SCROLL_BEHAVIOR });
       }
     } else {
+      // Scroll to bottom if at start position
       movesList.scrollTop = movesList.scrollHeight;
     }
   }
@@ -765,5 +878,5 @@ window.addEventListener('resize', () => {
         canvas.dispatchEvent(event);
       }
     });
-  }, 250);
+  }, TIMING.RESIZE_DEBOUNCE_MS);
 });

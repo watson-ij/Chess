@@ -1,4 +1,5 @@
 import { OpeningNode, SRSData } from './OpeningNode';
+import { SRS_CONFIG, SRS_ALGORITHM, TIME_CONSTANTS } from './constants';
 
 /**
  * Quality of the user's response in practice (0-5 scale)
@@ -42,29 +43,33 @@ export class SRSManager {
     // EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
     // where q is quality (0-5)
     const qualityNum = quality as number;
-    let newEaseFactor = srs.easeFactor + (0.1 - (5 - qualityNum) * (0.08 + (5 - qualityNum) * 0.02));
+    const qualityDiff = SRS_ALGORITHM.MAX_QUALITY - qualityNum;
+    let newEaseFactor = srs.easeFactor + (
+      SRS_ALGORITHM.BASE_ADJUSTMENT -
+      qualityDiff * (SRS_ALGORITHM.PRIMARY_COEFFICIENT + qualityDiff * SRS_ALGORITHM.SECONDARY_COEFFICIENT)
+    );
 
-    // Ease factor must be at least 1.3
-    if (newEaseFactor < 1.3) {
-      newEaseFactor = 1.3;
+    // Ease factor must be at least the minimum threshold
+    if (newEaseFactor < SRS_CONFIG.MIN_EASE_FACTOR) {
+      newEaseFactor = SRS_CONFIG.MIN_EASE_FACTOR;
     }
 
     srs.easeFactor = newEaseFactor;
 
     // Update repetition count and interval
-    if (quality < 3) {
+    if (quality < SRS_CONFIG.CORRECT_QUALITY_THRESHOLD) {
       // Incorrect response - reset repetitions
       srs.repetitions = 0;
-      srs.interval = 1; // Review again tomorrow
+      srs.interval = SRS_CONFIG.FAILED_INTERVAL;
     } else {
       // Correct response - increment repetitions
       srs.correctCount++;
       srs.repetitions++;
 
       if (srs.repetitions === 1) {
-        srs.interval = 1; // First repetition: 1 day
+        srs.interval = SRS_CONFIG.FIRST_INTERVAL;
       } else if (srs.repetitions === 2) {
-        srs.interval = 6; // Second repetition: 6 days
+        srs.interval = SRS_CONFIG.SECOND_INTERVAL;
       } else {
         // Subsequent repetitions: previous interval * ease factor
         srs.interval = Math.round(srs.interval * srs.easeFactor);
@@ -72,7 +77,7 @@ export class SRSManager {
     }
 
     // Calculate next review date
-    srs.nextReview = currentDate + (srs.interval * 24 * 60 * 60 * 1000);
+    srs.nextReview = currentDate + (srs.interval * TIME_CONSTANTS.MS_PER_DAY);
 
     return srs;
   }
@@ -84,7 +89,7 @@ export class SRSManager {
    * @param limit - Maximum number of positions to return
    * @returns Array of nodes due for review, sorted by priority
    */
-  static getDuePositions(nodes: OpeningNode[], limit: number = 20): OpeningNode[] {
+  static getDuePositions(nodes: OpeningNode[], limit: number = SRS_CONFIG.DEFAULT_LIMIT): OpeningNode[] {
     const currentDate = Date.now();
 
     // Filter nodes that are due for review
@@ -137,16 +142,17 @@ export class SRSManager {
     const keyNodes = allNodes.filter(n => n.isKeyPosition);
     const dueNodes = rootNode.getDueNodes();
 
-    // Mastered = ease factor >= 2.5 and interval >= 21 days
+    // Mastered = ease factor >= threshold and interval >= threshold days
     const masteredNodes = keyNodes.filter(n =>
-      n.srsData.easeFactor >= 2.5 && n.srsData.interval >= 21
+      n.srsData.easeFactor >= SRS_CONFIG.MASTERED_EASE_THRESHOLD &&
+      n.srsData.interval >= SRS_CONFIG.MASTERED_INTERVAL_THRESHOLD
     );
 
     const totalReviews = keyNodes.reduce((sum, n) => sum + n.srsData.totalReviews, 0);
     const totalCorrect = keyNodes.reduce((sum, n) => sum + n.srsData.correctCount, 0);
     const avgEaseFactor = keyNodes.length > 0
       ? keyNodes.reduce((sum, n) => sum + n.srsData.easeFactor, 0) / keyNodes.length
-      : 2.5;
+      : SRS_CONFIG.INITIAL_EASE_FACTOR;
 
     return {
       totalPositions: allNodes.length,
@@ -164,7 +170,7 @@ export class SRSManager {
    */
   static reset(node: OpeningNode): void {
     node.srsData = {
-      easeFactor: 2.5,
+      easeFactor: SRS_CONFIG.INITIAL_EASE_FACTOR,
       interval: 0,
       repetitions: 0,
       lastReviewed: null,
@@ -180,12 +186,12 @@ export class SRSManager {
   static formatInterval(days: number): string {
     if (days === 0) return 'New';
     if (days === 1) return '1 day';
-    if (days < 30) return `${days} days`;
-    if (days < 365) {
-      const months = Math.round(days / 30);
+    if (days < TIME_CONSTANTS.DAYS_PER_MONTH) return `${days} days`;
+    if (days < TIME_CONSTANTS.DAYS_PER_YEAR) {
+      const months = Math.round(days / TIME_CONSTANTS.DAYS_PER_MONTH);
       return `${months} month${months > 1 ? 's' : ''}`;
     }
-    const years = Math.round(days / 365);
+    const years = Math.round(days / TIME_CONSTANTS.DAYS_PER_YEAR);
     return `${years} year${years > 1 ? 's' : ''}`;
   }
 
@@ -199,11 +205,11 @@ export class SRSManager {
     const diff = nextReview - now;
 
     if (diff < 0) {
-      const days = Math.abs(Math.floor(diff / (24 * 60 * 60 * 1000)));
+      const days = Math.abs(Math.floor(diff / TIME_CONSTANTS.MS_PER_DAY));
       return days === 0 ? 'Due now' : `Overdue by ${days} day${days > 1 ? 's' : ''}`;
     }
 
-    const days = Math.ceil(diff / (24 * 60 * 60 * 1000));
+    const days = Math.ceil(diff / TIME_CONSTANTS.MS_PER_DAY);
     if (days === 0) return 'Due today';
     if (days === 1) return 'Due tomorrow';
     return `Due in ${days} days`;

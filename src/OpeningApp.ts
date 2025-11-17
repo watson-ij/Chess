@@ -4,6 +4,8 @@ import { OpeningRepository, Opening, OpeningColor } from './OpeningRepository';
 import { OpeningNode } from './OpeningNode';
 import { SRSManager, ResponseQuality } from './SRSManager';
 import type { Position } from './types';
+import { SRS_CONFIG, TREE_UI } from './constants';
+import { Logger } from './Logger';
 
 type AppMode = 'repository' | 'input' | 'view' | 'practice';
 
@@ -125,27 +127,11 @@ export class OpeningApp {
   }
 
   private handleInputModeClick(square: Position): void {
-    if (!this.selectedSquare) {
-      // Select this square if it has a piece of the current turn
-      const piece = this.engine.getPieceAt(square);
-      if (piece && piece.color === this.engine.getCurrentTurn()) {
-        this.selectedSquare = square;
-        this.renderer.setSelectedSquare(square);
-        const legalMoves = this.engine.getLegalMoves(square);
-        this.renderer.setHighlightedSquares(legalMoves);
-        this.renderer.render(this.engine.getBoard());
-      }
-    } else {
-      // Try to make a move
-      const success = this.engine.makeMove(this.selectedSquare, square);
-
-      if (success) {
-        // Get the move notation
-        const moveHistory = this.engine.getMoveHistory();
-        const lastMove = moveHistory[moveHistory.length - 1];
-        const moveNotation = lastMove.notation || '';
-
-        // Add to opening tree
+    this.handlePieceMovement(
+      this.engine,
+      square,
+      (moveNotation) => {
+        // Callback for successful move in input mode
         if (this.currentOpening && this.currentNode) {
           const fen = this.engine.toFEN();
           this.currentNode = this.repository.addMove(
@@ -157,57 +143,92 @@ export class OpeningApp {
           this.inputMoveHistory.push(moveNotation);
           this.updateInputModeUI();
         }
-
-        this.selectedSquare = null;
-        this.renderer.setSelectedSquare(null);
-        this.renderer.setHighlightedSquares([]);
-        this.renderer.render(this.engine.getBoard());
-      } else {
-        // Invalid move, clear selection
-        this.selectedSquare = null;
-        this.renderer.setSelectedSquare(null);
-        this.renderer.setHighlightedSquares([]);
-        this.renderer.render(this.engine.getBoard());
       }
-    }
+    );
   }
 
   private handlePracticeModeClick(square: Position): void {
     if (!this.practiceEngine) return;
 
-    if (!this.selectedSquare) {
-      // Select this square if it has a piece of the current turn
-      const piece = this.practiceEngine.getPieceAt(square);
-      if (piece && piece.color === this.practiceEngine.getCurrentTurn()) {
-        this.selectedSquare = square;
-        this.renderer.setSelectedSquare(square);
-        const legalMoves = this.practiceEngine.getLegalMoves(square);
-        this.renderer.setHighlightedSquares(legalMoves);
-        this.renderer.render(this.practiceEngine.getBoard());
+    this.handlePieceMovement(
+      this.practiceEngine,
+      square,
+      (moveNotation) => {
+        // Callback for successful move in practice mode
+        this.checkPracticeMove(moveNotation);
       }
+    );
+  }
+
+  /**
+   * Handle piece movement logic (shared by input and practice modes)
+   * Consolidates duplicate code for piece selection and move execution
+   * @param engine - The chess engine to use
+   * @param square - The clicked square
+   * @param onMoveSuccess - Callback function when a move is successfully made
+   */
+  private handlePieceMovement(
+    engine: ChessEngine,
+    square: Position,
+    onMoveSuccess?: (moveNotation: string) => void
+  ): void {
+    if (!this.selectedSquare) {
+      // Try to select a piece
+      this.trySelectPiece(engine, square);
     } else {
-      // Try to make a move
-      const success = this.practiceEngine.makeMove(this.selectedSquare, square);
+      // Try to execute a move
+      this.tryExecuteMove(engine, square, onMoveSuccess);
+    }
+  }
 
-      if (success) {
-        const moveHistory = this.practiceEngine.getMoveHistory();
-        const lastMove = moveHistory[moveHistory.length - 1];
-        const userMove = lastMove.notation || '';
+  /**
+   * Try to select a piece at the given square
+   */
+  private trySelectPiece(engine: ChessEngine, square: Position): void {
+    const piece = engine.getPieceAt(square);
+    if (piece && piece.color === engine.getCurrentTurn()) {
+      this.selectedSquare = square;
+      this.renderer.setSelectedSquare(square);
+      const legalMoves = engine.getLegalMoves(square);
+      this.renderer.setHighlightedSquares(legalMoves);
+      this.renderer.render(engine.getBoard());
+    }
+  }
 
-        // Check if this is the correct move
-        this.checkPracticeMove(userMove);
+  /**
+   * Try to execute a move from selected square to target square
+   */
+  private tryExecuteMove(
+    engine: ChessEngine,
+    targetSquare: Position,
+    onMoveSuccess?: (moveNotation: string) => void
+  ): void {
+    const success = engine.makeMove(this.selectedSquare!, targetSquare);
 
-        this.selectedSquare = null;
-        this.renderer.setSelectedSquare(null);
-        this.renderer.setHighlightedSquares([]);
-        this.renderer.render(this.practiceEngine.getBoard());
-      } else {
-        this.selectedSquare = null;
-        this.renderer.setSelectedSquare(null);
-        this.renderer.setHighlightedSquares([]);
-        this.renderer.render(this.practiceEngine.getBoard());
+    if (success) {
+      // Get the move notation
+      const moveHistory = engine.getMoveHistory();
+      const lastMove = moveHistory[moveHistory.length - 1];
+      const moveNotation = lastMove.notation || '';
+
+      // Call success callback if provided
+      if (onMoveSuccess) {
+        onMoveSuccess(moveNotation);
       }
     }
+
+    // Clear selection and render (regardless of success/failure)
+    this.clearSelection(engine);
+  }
+
+  /**
+   * Clear piece selection and render board
+   */
+  private clearSelection(engine: ChessEngine): void {
+    this.selectedSquare = null;
+    this.renderer.setSelectedSquare(null);
+    this.renderer.setHighlightedSquares([]);
+    this.renderer.render(engine.getBoard());
   }
 
   private setMode(mode: AppMode): void {
@@ -492,7 +513,7 @@ export class OpeningApp {
 
     const title = document.createElement('h3');
     title.textContent = 'Move Tree';
-    title.style.marginBottom = '10px';
+    title.style.marginBottom = `${TREE_UI.TITLE_MARGIN_BOTTOM}px`;
     container.appendChild(title);
 
     // Build tree recursively
@@ -503,7 +524,7 @@ export class OpeningApp {
   private buildTreeNode(node: OpeningNode, depth: number): HTMLElement {
     const div = document.createElement('div');
     div.className = 'tree-node';
-    div.style.marginLeft = `${depth * 20}px`;
+    div.style.marginLeft = `${depth * TREE_UI.INDENT_PER_LEVEL}px`;
 
     const label = document.createElement('div');
     label.className = 'tree-node-label';
@@ -554,7 +575,7 @@ export class OpeningApp {
       this.engine.loadFEN(node.fen);
       this.renderer.render(this.engine.getBoard());
     } catch (error) {
-      console.error('Failed to load position:', error);
+      Logger.error('Failed to load position', error);
     }
   }
 
@@ -568,7 +589,7 @@ export class OpeningApp {
       allKeyPositions.push(...keyPositions);
     });
 
-    this.practiceNodes = SRSManager.getDuePositions(allKeyPositions, 20);
+    this.practiceNodes = SRSManager.getDuePositions(allKeyPositions, SRS_CONFIG.MAX_DUE_POSITIONS);
 
     if (this.practiceNodes.length === 0) {
       alert('No positions due for review! Mark some positions as key positions first.');
@@ -596,10 +617,6 @@ export class OpeningApp {
     }
 
     const node = this.practiceNodes[this.currentPracticeIndex];
-
-    // Find the path to this node (list of moves)
-    // For now, we'll use a simple approach: play through from the start
-    // In a full implementation, you'd store the path in the node
 
     // Load the FEN up to the position before the one we need to practice
     this.practiceEngine = new ChessEngine();

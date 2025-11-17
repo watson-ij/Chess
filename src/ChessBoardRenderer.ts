@@ -1,9 +1,18 @@
 import type { Board, Piece, Position } from './types';
+import {
+  BOARD_CONFIG,
+  BOARD_COLORS,
+  HIGHLIGHT_COLORS,
+  PIECE_COLORS,
+  PIECE_RENDERING,
+  TEXT_RENDERING,
+  CANVAS_SETTINGS,
+} from './constants';
 
 export class ChessBoardRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private squareSize: number = 80; // Default, will be updated by resize()
+  private squareSize: number = BOARD_CONFIG.DEFAULT_SQUARE_SIZE;
   private selectedSquare: Position | null = null;
   private highlightedSquares: Position[] = [];
   private currentBoard: Board | null = null;
@@ -11,12 +20,12 @@ export class ChessBoardRenderer {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
 
-    const ctx = canvas.getContext('2d', { alpha: false });
+    const ctx = canvas.getContext('2d', { alpha: CANVAS_SETTINGS.ALPHA });
     if (!ctx) throw new Error('Could not get canvas context');
 
     // Enable anti-aliasing and smoothing for high-quality rendering
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    ctx.imageSmoothingEnabled = CANVAS_SETTINGS.IMAGE_SMOOTHING_ENABLED;
+    ctx.imageSmoothingQuality = CANVAS_SETTINGS.IMAGE_SMOOTHING_QUALITY;
 
     this.ctx = ctx;
 
@@ -40,13 +49,10 @@ export class ChessBoardRenderer {
   }
 
   private drawBoard(): void {
-    const lightColor = '#f0d9b5';
-    const darkColor = '#b58863';
-
-    for (let row = 0; row < 8; row++) {
-      for (let col = 0; col < 8; col++) {
+    for (let row = 0; row < BOARD_CONFIG.BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_CONFIG.BOARD_SIZE; col++) {
         const isLight = (row + col) % 2 === 0;
-        this.ctx.fillStyle = isLight ? lightColor : darkColor;
+        this.ctx.fillStyle = isLight ? BOARD_COLORS.LIGHT_SQUARE : BOARD_COLORS.DARK_SQUARE;
         this.ctx.fillRect(
           col * this.squareSize,
           row * this.squareSize,
@@ -57,29 +63,29 @@ export class ChessBoardRenderer {
     }
 
     // Draw coordinates
-    this.ctx.font = '12px sans-serif';
+    this.ctx.font = `${TEXT_RENDERING.COORDINATE_FONT_SIZE}px ${TEXT_RENDERING.FONT_FAMILY}`;
     this.ctx.fillStyle = '#000';
 
     // Column labels (a-h)
-    for (let col = 0; col < 8; col++) {
+    for (let col = 0; col < BOARD_CONFIG.BOARD_SIZE; col++) {
       const isLight = col % 2 === 0;
-      this.ctx.fillStyle = isLight ? darkColor : lightColor;
+      this.ctx.fillStyle = isLight ? BOARD_COLORS.DARK_SQUARE : BOARD_COLORS.LIGHT_SQUARE;
       const letter = String.fromCharCode(97 + col);
       this.ctx.fillText(
         letter,
-        col * this.squareSize + this.squareSize - 15,
-        7 * this.squareSize + this.squareSize - 5
+        col * this.squareSize + this.squareSize - TEXT_RENDERING.COLUMN_OFFSET,
+        (BOARD_CONFIG.BOARD_SIZE - 1) * this.squareSize + this.squareSize - TEXT_RENDERING.COORDINATE_OFFSET
       );
     }
 
     // Row labels (1-8)
-    for (let row = 0; row < 8; row++) {
+    for (let row = 0; row < BOARD_CONFIG.BOARD_SIZE; row++) {
       const isLight = row % 2 === 0;
-      this.ctx.fillStyle = isLight ? lightColor : darkColor;
+      this.ctx.fillStyle = isLight ? BOARD_COLORS.LIGHT_SQUARE : BOARD_COLORS.DARK_SQUARE;
       this.ctx.fillText(
-        String(8 - row),
-        5,
-        row * this.squareSize + 15
+        String(BOARD_CONFIG.BOARD_SIZE - row),
+        TEXT_RENDERING.COORDINATE_OFFSET,
+        row * this.squareSize + TEXT_RENDERING.ROW_OFFSET
       );
     }
   }
@@ -87,7 +93,7 @@ export class ChessBoardRenderer {
   private drawHighlights(): void {
     // Highlight selected square
     if (this.selectedSquare) {
-      this.ctx.fillStyle = 'rgba(255, 255, 0, 0.4)';
+      this.ctx.fillStyle = HIGHLIGHT_COLORS.SELECTED_SQUARE;
       this.ctx.fillRect(
         this.selectedSquare.col * this.squareSize,
         this.selectedSquare.row * this.squareSize,
@@ -97,13 +103,13 @@ export class ChessBoardRenderer {
     }
 
     // Highlight legal move squares
-    this.ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+    this.ctx.fillStyle = HIGHLIGHT_COLORS.LEGAL_MOVE;
     for (const square of this.highlightedSquares) {
       this.ctx.beginPath();
       this.ctx.arc(
         square.col * this.squareSize + this.squareSize / 2,
         square.row * this.squareSize + this.squareSize / 2,
-        this.squareSize / 6,
+        this.squareSize * PIECE_RENDERING.MOVE_INDICATOR_RATIO,
         0,
         Math.PI * 2
       );
@@ -112,8 +118,8 @@ export class ChessBoardRenderer {
   }
 
   private drawPieces(board: Board): void {
-    for (let row = 0; row < 8; row++) {
-      for (let col = 0; col < 8; col++) {
+    for (let row = 0; row < BOARD_CONFIG.BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_CONFIG.BOARD_SIZE; col++) {
         const piece = board[row][col];
         if (piece) {
           this.drawPiece(piece, { row, col });
@@ -125,7 +131,7 @@ export class ChessBoardRenderer {
   private drawPiece(piece: Piece, pos: Position): void {
     const x = pos.col * this.squareSize + this.squareSize / 2;
     const y = pos.row * this.squareSize + this.squareSize / 2;
-    const size = this.squareSize * 0.4;
+    const size = this.squareSize * PIECE_RENDERING.SIZE_RATIO;
 
     this.ctx.save();
     this.ctx.translate(x, y);
@@ -160,34 +166,58 @@ export class ChessBoardRenderer {
   private createGradient(size: number, isWhite: boolean): CanvasGradient {
     const gradient = this.ctx.createLinearGradient(-size, -size, size, size);
     if (isWhite) {
-      gradient.addColorStop(0, '#ffffff');
-      gradient.addColorStop(1, '#c9b899');
+      gradient.addColorStop(0, PIECE_COLORS.WHITE_START);
+      gradient.addColorStop(1, PIECE_COLORS.WHITE_END);
     } else {
-      gradient.addColorStop(0, '#4a4a4a');
-      gradient.addColorStop(1, '#1a1a1a');
+      gradient.addColorStop(0, PIECE_COLORS.BLACK_START);
+      gradient.addColorStop(1, PIECE_COLORS.BLACK_END);
     }
     return gradient;
   }
 
   private getOutlineColor(isWhite: boolean): string {
-    return isWhite ? '#323232' : '#666666';
+    return isWhite ? PIECE_COLORS.WHITE_OUTLINE : PIECE_COLORS.BLACK_OUTLINE;
   }
 
-  private drawKing(size: number, isWhite: boolean): void {
+  /**
+   * Setup common drawing properties for piece rendering
+   * Reduces code duplication across all piece drawing methods
+   */
+  private setupPieceDrawing(size: number, isWhite: boolean): void {
     const gradient = this.createGradient(size, isWhite);
     const outlineColor = this.getOutlineColor(isWhite);
 
-    this.ctx.lineWidth = 2;
-    this.ctx.lineCap = 'round';
-    this.ctx.lineJoin = 'round';
-
-    // Base pedestal
     this.ctx.fillStyle = gradient;
     this.ctx.strokeStyle = outlineColor;
+    this.ctx.lineWidth = PIECE_RENDERING.LINE_WIDTH;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+  }
+
+  /**
+   * Draw a common pedestal base for pieces
+   * Most pieces share a similar elliptical base
+   */
+  private drawPedestal(size: number, widthRatio: number = PIECE_RENDERING.PEDESTAL_WIDTH_RATIO): void {
     this.ctx.beginPath();
-    this.ctx.ellipse(0, size * 0.5, size * 0.55, size * 0.15, 0, 0, Math.PI * 2);
+    this.ctx.ellipse(
+      0,
+      size * 0.5,
+      size * widthRatio,
+      size * PIECE_RENDERING.PEDESTAL_HEIGHT_RATIO,
+      0,
+      0,
+      Math.PI * 2
+    );
     this.ctx.fill();
     this.ctx.stroke();
+  }
+
+  private drawKing(size: number, isWhite: boolean): void {
+    this.setupPieceDrawing(size, isWhite);
+
+    // Base pedestal
+    this.drawPedestal(size);
 
     // Lower body
     this.ctx.beginPath();
@@ -217,7 +247,7 @@ export class ChessBoardRenderer {
     this.ctx.stroke();
 
     // Cross on top
-    this.ctx.lineWidth = 2.5;
+    this.ctx.lineWidth = PIECE_RENDERING.THICK_LINE_WIDTH;
     this.ctx.beginPath();
     this.ctx.moveTo(0, -size * 0.7);
     this.ctx.lineTo(0, -size * 0.5);
@@ -226,7 +256,6 @@ export class ChessBoardRenderer {
     this.ctx.stroke();
 
     // Small circle at cross center
-    this.ctx.fillStyle = gradient;
     this.ctx.beginPath();
     this.ctx.arc(0, -size * 0.6, size * 0.06, 0, Math.PI * 2);
     this.ctx.fill();
@@ -234,20 +263,10 @@ export class ChessBoardRenderer {
   }
 
   private drawQueen(size: number, isWhite: boolean): void {
-    const gradient = this.createGradient(size, isWhite);
-    const outlineColor = this.getOutlineColor(isWhite);
+    this.setupPieceDrawing(size, isWhite);
 
-    this.ctx.lineWidth = 2;
-    this.ctx.lineCap = 'round';
-    this.ctx.lineJoin = 'round';
-
-    // Base pedestal
-    this.ctx.fillStyle = gradient;
-    this.ctx.strokeStyle = outlineColor;
-    this.ctx.beginPath();
-    this.ctx.ellipse(0, size * 0.5, size * 0.6, size * 0.15, 0, 0, Math.PI * 2);
-    this.ctx.fill();
-    this.ctx.stroke();
+    // Base pedestal (wider than default)
+    this.drawPedestal(size, 0.6);
 
     // Body with elegant curves
     this.ctx.beginPath();
@@ -298,20 +317,10 @@ export class ChessBoardRenderer {
   }
 
   private drawRook(size: number, isWhite: boolean): void {
-    const gradient = this.createGradient(size, isWhite);
-    const outlineColor = this.getOutlineColor(isWhite);
-
-    this.ctx.lineWidth = 2;
-    this.ctx.lineCap = 'round';
-    this.ctx.lineJoin = 'round';
+    this.setupPieceDrawing(size, isWhite);
 
     // Base pedestal
-    this.ctx.fillStyle = gradient;
-    this.ctx.strokeStyle = outlineColor;
-    this.ctx.beginPath();
-    this.ctx.ellipse(0, size * 0.5, size * 0.55, size * 0.15, 0, 0, Math.PI * 2);
-    this.ctx.fill();
-    this.ctx.stroke();
+    this.drawPedestal(size);
 
     // Tower body with slight taper
     this.ctx.beginPath();
@@ -345,20 +354,10 @@ export class ChessBoardRenderer {
   }
 
   private drawBishop(size: number, isWhite: boolean): void {
-    const gradient = this.createGradient(size, isWhite);
-    const outlineColor = this.getOutlineColor(isWhite);
+    this.setupPieceDrawing(size, isWhite);
 
-    this.ctx.lineWidth = 2;
-    this.ctx.lineCap = 'round';
-    this.ctx.lineJoin = 'round';
-
-    // Base pedestal
-    this.ctx.fillStyle = gradient;
-    this.ctx.strokeStyle = outlineColor;
-    this.ctx.beginPath();
-    this.ctx.ellipse(0, size * 0.5, size * 0.5, size * 0.15, 0, 0, Math.PI * 2);
-    this.ctx.fill();
-    this.ctx.stroke();
+    // Base pedestal (slightly narrower)
+    this.drawPedestal(size, 0.5);
 
     // Lower body - bulbous base
     this.ctx.beginPath();
@@ -386,24 +385,21 @@ export class ChessBoardRenderer {
     this.ctx.stroke();
 
     // Decorative slit in mitre
-    this.ctx.strokeStyle = outlineColor;
-    this.ctx.lineWidth = 1.5;
+    this.ctx.lineWidth = PIECE_RENDERING.THIN_LINE_WIDTH;
     this.ctx.beginPath();
     this.ctx.moveTo(-size * 0.15, -size * 0.35);
     this.ctx.quadraticCurveTo(0, -size * 0.5, size * 0.15, -size * 0.35);
     this.ctx.stroke();
 
     // Ball on top
-    this.ctx.fillStyle = gradient;
-    this.ctx.strokeStyle = outlineColor;
-    this.ctx.lineWidth = 2;
+    this.ctx.lineWidth = PIECE_RENDERING.LINE_WIDTH;
     this.ctx.beginPath();
     this.ctx.arc(0, -size * 0.75, size * 0.12, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.stroke();
 
     // Small cross on ball
-    this.ctx.lineWidth = 1.5;
+    this.ctx.lineWidth = PIECE_RENDERING.THIN_LINE_WIDTH;
     this.ctx.beginPath();
     this.ctx.moveTo(0, -size * 0.83);
     this.ctx.lineTo(0, -size * 0.67);
@@ -413,20 +409,10 @@ export class ChessBoardRenderer {
   }
 
   private drawKnight(size: number, isWhite: boolean): void {
-    const gradient = this.createGradient(size, isWhite);
-    const outlineColor = this.getOutlineColor(isWhite);
+    this.setupPieceDrawing(size, isWhite);
 
-    this.ctx.lineWidth = 2;
-    this.ctx.lineCap = 'round';
-    this.ctx.lineJoin = 'round';
-
-    // Base pedestal
-    this.ctx.fillStyle = gradient;
-    this.ctx.strokeStyle = outlineColor;
-    this.ctx.beginPath();
-    this.ctx.ellipse(0, size * 0.5, size * 0.5, size * 0.15, 0, 0, Math.PI * 2);
-    this.ctx.fill();
-    this.ctx.stroke();
+    // Base pedestal (slightly narrower)
+    this.drawPedestal(size, 0.5);
 
     // Neck base
     this.ctx.beginPath();
@@ -462,16 +448,9 @@ export class ChessBoardRenderer {
   }
 
   private drawPawn(size: number, isWhite: boolean): void {
-    const gradient = this.createGradient(size, isWhite);
-    const outlineColor = this.getOutlineColor(isWhite);
+    this.setupPieceDrawing(size, isWhite);
 
-    this.ctx.lineWidth = 2;
-    this.ctx.lineCap = 'round';
-    this.ctx.lineJoin = 'round';
-
-    // Base pedestal
-    this.ctx.fillStyle = gradient;
-    this.ctx.strokeStyle = outlineColor;
+    // Base pedestal (narrower, shorter)
     this.ctx.beginPath();
     this.ctx.ellipse(0, size * 0.5, size * 0.45, size * 0.12, 0, 0, Math.PI * 2);
     this.ctx.fill();
@@ -546,13 +525,13 @@ export class ChessBoardRenderer {
     const container = this.canvas.parentElement;
     if (!container) {
       // Fallback to default size if no container
-      this.resizeToSize(640);
+      this.resizeToSize(BOARD_CONFIG.DEFAULT_CANVAS_SIZE);
       return;
     }
 
     // Calculate the maximum size the canvas can be
     const containerWidth = container.clientWidth;
-    const maxSize = Math.min(containerWidth, 640); // Cap at 640px for large screens
+    const maxSize = Math.min(containerWidth, BOARD_CONFIG.MAX_CANVAS_SIZE);
 
     this.resizeToSize(maxSize);
   }
@@ -575,10 +554,10 @@ export class ChessBoardRenderer {
     this.ctx.scale(dpr, dpr);
 
     // Re-enable smoothing after scaling
-    this.ctx.imageSmoothingEnabled = true;
-    this.ctx.imageSmoothingQuality = 'high';
+    this.ctx.imageSmoothingEnabled = CANVAS_SETTINGS.IMAGE_SMOOTHING_ENABLED;
+    this.ctx.imageSmoothingQuality = CANVAS_SETTINGS.IMAGE_SMOOTHING_QUALITY;
 
     // Update square size
-    this.squareSize = size / 8;
+    this.squareSize = size / BOARD_CONFIG.BOARD_SIZE;
   }
 }
