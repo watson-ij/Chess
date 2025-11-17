@@ -105,172 +105,411 @@ export class ChessBoardRenderer {
   private drawPiece(piece: Piece, pos: Position): void {
     const x = pos.col * this.squareSize + this.squareSize / 2;
     const y = pos.row * this.squareSize + this.squareSize / 2;
-    const size = this.squareSize * 0.35;
-
-    // Set colors
-    const fillColor = piece.color === 'white' ? '#ffffff' : '#1a1a1a';
-    const strokeColor = piece.color === 'white' ? '#000000' : '#ffffff';
+    const size = this.squareSize * 0.4;
 
     this.ctx.save();
     this.ctx.translate(x, y);
 
+    // Create gradients and colors based on piece color
+    const isWhite = piece.color === 'white';
+
     switch (piece.type) {
       case 'king':
-        this.drawKing(size, fillColor, strokeColor);
+        this.drawKing(size, isWhite);
         break;
       case 'queen':
-        this.drawQueen(size, fillColor, strokeColor);
+        this.drawQueen(size, isWhite);
         break;
       case 'rook':
-        this.drawRook(size, fillColor, strokeColor);
+        this.drawRook(size, isWhite);
         break;
       case 'bishop':
-        this.drawBishop(size, fillColor, strokeColor);
+        this.drawBishop(size, isWhite);
         break;
       case 'knight':
-        this.drawKnight(size, fillColor, strokeColor);
+        this.drawKnight(size, isWhite);
         break;
       case 'pawn':
-        this.drawPawn(size, fillColor, strokeColor);
+        this.drawPawn(size, isWhite);
         break;
     }
 
     this.ctx.restore();
   }
 
-  private drawKing(size: number, fill: string, stroke: string): void {
-    // Crown base
-    this.ctx.fillStyle = fill;
-    this.ctx.strokeStyle = stroke;
-    this.ctx.lineWidth = 2;
+  private createGradient(size: number, isWhite: boolean): CanvasGradient {
+    const gradient = this.ctx.createLinearGradient(-size, -size, size, size);
+    if (isWhite) {
+      gradient.addColorStop(0, '#ffffff');
+      gradient.addColorStop(1, '#c9b899');
+    } else {
+      gradient.addColorStop(0, '#4a4a4a');
+      gradient.addColorStop(1, '#1a1a1a');
+    }
+    return gradient;
+  }
 
+  private getOutlineColor(isWhite: boolean): string {
+    return isWhite ? '#323232' : '#666666';
+  }
+
+  private drawKing(size: number, isWhite: boolean): void {
+    const gradient = this.createGradient(size, isWhite);
+    const outlineColor = this.getOutlineColor(isWhite);
+
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+
+    // Base pedestal
+    this.ctx.fillStyle = gradient;
+    this.ctx.strokeStyle = outlineColor;
     this.ctx.beginPath();
-    this.ctx.moveTo(-size * 0.6, size * 0.4);
-    this.ctx.lineTo(-size * 0.6, -size * 0.2);
-    this.ctx.lineTo(-size * 0.3, -size * 0.5);
+    this.ctx.ellipse(0, size * 0.5, size * 0.55, size * 0.15, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Lower body
+    this.ctx.beginPath();
+    this.ctx.moveTo(-size * 0.4, size * 0.5);
+    this.ctx.lineTo(-size * 0.35, size * 0.1);
+    this.ctx.quadraticCurveTo(-size * 0.35, -size * 0.05, -size * 0.3, -size * 0.15);
+    this.ctx.lineTo(size * 0.3, -size * 0.15);
+    this.ctx.quadraticCurveTo(size * 0.35, -size * 0.05, size * 0.35, size * 0.1);
+    this.ctx.lineTo(size * 0.4, size * 0.5);
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Crown with five points
+    this.ctx.beginPath();
+    this.ctx.moveTo(-size * 0.5, -size * 0.15);
+    this.ctx.lineTo(-size * 0.4, -size * 0.45);
+    this.ctx.lineTo(-size * 0.25, -size * 0.25);
+    this.ctx.lineTo(-size * 0.1, -size * 0.5);
     this.ctx.lineTo(0, -size * 0.3);
-    this.ctx.lineTo(size * 0.3, -size * 0.5);
-    this.ctx.lineTo(size * 0.6, -size * 0.2);
-    this.ctx.lineTo(size * 0.6, size * 0.4);
+    this.ctx.lineTo(size * 0.1, -size * 0.5);
+    this.ctx.lineTo(size * 0.25, -size * 0.25);
+    this.ctx.lineTo(size * 0.4, -size * 0.45);
+    this.ctx.lineTo(size * 0.5, -size * 0.15);
     this.ctx.closePath();
     this.ctx.fill();
     this.ctx.stroke();
 
     // Cross on top
-    this.ctx.lineWidth = 3;
+    this.ctx.lineWidth = 2.5;
     this.ctx.beginPath();
-    this.ctx.moveTo(0, -size * 0.8);
+    this.ctx.moveTo(0, -size * 0.7);
     this.ctx.lineTo(0, -size * 0.5);
-    this.ctx.moveTo(-size * 0.15, -size * 0.65);
-    this.ctx.lineTo(size * 0.15, -size * 0.65);
+    this.ctx.moveTo(-size * 0.12, -size * 0.6);
+    this.ctx.lineTo(size * 0.12, -size * 0.6);
     this.ctx.stroke();
-  }
 
-  private drawQueen(size: number, fill: string, stroke: string): void {
-    this.ctx.fillStyle = fill;
-    this.ctx.strokeStyle = stroke;
-    this.ctx.lineWidth = 2;
-
-    // Crown with points
+    // Small circle at cross center
+    this.ctx.fillStyle = gradient;
     this.ctx.beginPath();
-    this.ctx.moveTo(-size * 0.6, size * 0.4);
-    this.ctx.lineTo(-size * 0.6, 0);
-    this.ctx.lineTo(-size * 0.4, -size * 0.6);
-    this.ctx.lineTo(-size * 0.2, -size * 0.2);
-    this.ctx.lineTo(0, -size * 0.7);
-    this.ctx.lineTo(size * 0.2, -size * 0.2);
-    this.ctx.lineTo(size * 0.4, -size * 0.6);
-    this.ctx.lineTo(size * 0.6, 0);
-    this.ctx.lineTo(size * 0.6, size * 0.4);
-    this.ctx.closePath();
+    this.ctx.arc(0, -size * 0.6, size * 0.06, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.stroke();
   }
 
-  private drawRook(size: number, fill: string, stroke: string): void {
-    this.ctx.fillStyle = fill;
-    this.ctx.strokeStyle = stroke;
+  private drawQueen(size: number, isWhite: boolean): void {
+    const gradient = this.createGradient(size, isWhite);
+    const outlineColor = this.getOutlineColor(isWhite);
+
     this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
 
-    // Castle tower
-    this.ctx.fillRect(-size * 0.5, -size * 0.3, size, size * 0.7);
-    this.ctx.strokeRect(-size * 0.5, -size * 0.3, size, size * 0.7);
-
-    // Battlements
-    this.ctx.fillRect(-size * 0.5, -size * 0.6, size * 0.3, size * 0.3);
-    this.ctx.strokeRect(-size * 0.5, -size * 0.6, size * 0.3, size * 0.3);
-    this.ctx.fillRect(-size * 0.1, -size * 0.6, size * 0.2, size * 0.3);
-    this.ctx.strokeRect(-size * 0.1, -size * 0.6, size * 0.2, size * 0.3);
-    this.ctx.fillRect(size * 0.2, -size * 0.6, size * 0.3, size * 0.3);
-    this.ctx.strokeRect(size * 0.2, -size * 0.6, size * 0.3, size * 0.3);
-  }
-
-  private drawBishop(size: number, fill: string, stroke: string): void {
-    this.ctx.fillStyle = fill;
-    this.ctx.strokeStyle = stroke;
-    this.ctx.lineWidth = 2;
-
-    // Mitre shape
+    // Base pedestal
+    this.ctx.fillStyle = gradient;
+    this.ctx.strokeStyle = outlineColor;
     this.ctx.beginPath();
-    this.ctx.moveTo(-size * 0.4, size * 0.4);
-    this.ctx.lineTo(-size * 0.3, -size * 0.2);
-    this.ctx.lineTo(0, -size * 0.7);
-    this.ctx.lineTo(size * 0.3, -size * 0.2);
-    this.ctx.lineTo(size * 0.4, size * 0.4);
+    this.ctx.ellipse(0, size * 0.5, size * 0.6, size * 0.15, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Body with elegant curves
+    this.ctx.beginPath();
+    this.ctx.moveTo(-size * 0.45, size * 0.5);
+    this.ctx.lineTo(-size * 0.4, size * 0.1);
+    this.ctx.quadraticCurveTo(-size * 0.4, -size * 0.1, -size * 0.35, -size * 0.2);
+    this.ctx.lineTo(size * 0.35, -size * 0.2);
+    this.ctx.quadraticCurveTo(size * 0.4, -size * 0.1, size * 0.4, size * 0.1);
+    this.ctx.lineTo(size * 0.45, size * 0.5);
     this.ctx.closePath();
     this.ctx.fill();
     this.ctx.stroke();
 
-    // Circle on top
+    // Crown with sophisticated pointed design
     this.ctx.beginPath();
-    this.ctx.arc(0, -size * 0.7, size * 0.1, 0, Math.PI * 2);
+    this.ctx.moveTo(-size * 0.55, -size * 0.2);
+    this.ctx.lineTo(-size * 0.45, -size * 0.55);
+    this.ctx.quadraticCurveTo(-size * 0.4, -size * 0.6, -size * 0.35, -size * 0.55);
+    this.ctx.lineTo(-size * 0.25, -size * 0.3);
+    this.ctx.lineTo(-size * 0.15, -size * 0.65);
+    this.ctx.quadraticCurveTo(-size * 0.1, -size * 0.7, -size * 0.05, -size * 0.65);
+    this.ctx.lineTo(0, -size * 0.35);
+    this.ctx.lineTo(size * 0.05, -size * 0.65);
+    this.ctx.quadraticCurveTo(size * 0.1, -size * 0.7, size * 0.15, -size * 0.65);
+    this.ctx.lineTo(size * 0.25, -size * 0.3);
+    this.ctx.lineTo(size * 0.35, -size * 0.55);
+    this.ctx.quadraticCurveTo(size * 0.4, -size * 0.6, size * 0.45, -size * 0.55);
+    this.ctx.lineTo(size * 0.55, -size * 0.2);
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Decorative orbs on crown points
+    const orbPositions = [
+      { x: -size * 0.45, y: -size * 0.6 },
+      { x: -size * 0.15, y: -size * 0.72 },
+      { x: 0, y: -size * 0.35 },
+      { x: size * 0.15, y: -size * 0.72 },
+      { x: size * 0.45, y: -size * 0.6 }
+    ];
+
+    orbPositions.forEach(pos => {
+      this.ctx.beginPath();
+      this.ctx.arc(pos.x, pos.y, size * 0.08, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.stroke();
+    });
+  }
+
+  private drawRook(size: number, isWhite: boolean): void {
+    const gradient = this.createGradient(size, isWhite);
+    const outlineColor = this.getOutlineColor(isWhite);
+
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+
+    // Base pedestal
+    this.ctx.fillStyle = gradient;
+    this.ctx.strokeStyle = outlineColor;
+    this.ctx.beginPath();
+    this.ctx.ellipse(0, size * 0.5, size * 0.55, size * 0.15, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Tower body with slight taper
+    this.ctx.beginPath();
+    this.ctx.moveTo(-size * 0.4, size * 0.5);
+    this.ctx.lineTo(-size * 0.35, -size * 0.15);
+    this.ctx.lineTo(-size * 0.45, -size * 0.3);
+    this.ctx.lineTo(size * 0.45, -size * 0.3);
+    this.ctx.lineTo(size * 0.35, -size * 0.15);
+    this.ctx.lineTo(size * 0.4, size * 0.5);
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Battlements (crenellations) - three towers
+    const battlement = (x: number) => {
+      this.ctx.beginPath();
+      this.ctx.rect(x - size * 0.12, -size * 0.65, size * 0.24, size * 0.35);
+      this.ctx.fill();
+      this.ctx.stroke();
+    };
+
+    battlement(-size * 0.35);  // Left tower
+    battlement(0);              // Center tower
+    battlement(size * 0.35);    // Right tower
+
+    // Top rim
+    this.ctx.beginPath();
+    this.ctx.rect(-size * 0.5, -size * 0.35, size, size * 0.08);
     this.ctx.fill();
     this.ctx.stroke();
   }
 
-  private drawKnight(size: number, fill: string, stroke: string): void {
-    this.ctx.fillStyle = fill;
-    this.ctx.strokeStyle = stroke;
-    this.ctx.lineWidth = 2;
+  private drawBishop(size: number, isWhite: boolean): void {
+    const gradient = this.createGradient(size, isWhite);
+    const outlineColor = this.getOutlineColor(isWhite);
 
-    // Horse head approximation
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+
+    // Base pedestal
+    this.ctx.fillStyle = gradient;
+    this.ctx.strokeStyle = outlineColor;
     this.ctx.beginPath();
-    this.ctx.moveTo(-size * 0.3, size * 0.4);
-    this.ctx.lineTo(-size * 0.3, 0);
-    this.ctx.lineTo(-size * 0.1, -size * 0.5);
-    this.ctx.lineTo(size * 0.3, -size * 0.6);
-    this.ctx.lineTo(size * 0.5, -size * 0.3);
-    this.ctx.lineTo(size * 0.4, 0);
-    this.ctx.lineTo(size * 0.3, size * 0.4);
+    this.ctx.ellipse(0, size * 0.5, size * 0.5, size * 0.15, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Lower body - bulbous base
+    this.ctx.beginPath();
+    this.ctx.moveTo(-size * 0.35, size * 0.5);
+    this.ctx.quadraticCurveTo(-size * 0.4, size * 0.2, -size * 0.35, 0);
+    this.ctx.lineTo(-size * 0.3, -size * 0.05);
+    this.ctx.quadraticCurveTo(-size * 0.3, -size * 0.15, -size * 0.25, -size * 0.2);
+    this.ctx.lineTo(size * 0.25, -size * 0.2);
+    this.ctx.quadraticCurveTo(size * 0.3, -size * 0.15, size * 0.3, -size * 0.05);
+    this.ctx.lineTo(size * 0.35, 0);
+    this.ctx.quadraticCurveTo(size * 0.4, size * 0.2, size * 0.35, size * 0.5);
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Mitre (bishop's hat) - elegant pointed shape
+    this.ctx.beginPath();
+    this.ctx.moveTo(-size * 0.35, -size * 0.2);
+    this.ctx.quadraticCurveTo(-size * 0.3, -size * 0.35, -size * 0.2, -size * 0.5);
+    this.ctx.quadraticCurveTo(-size * 0.1, -size * 0.65, 0, -size * 0.7);
+    this.ctx.quadraticCurveTo(size * 0.1, -size * 0.65, size * 0.2, -size * 0.5);
+    this.ctx.quadraticCurveTo(size * 0.3, -size * 0.35, size * 0.35, -size * 0.2);
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Decorative slit in mitre
+    this.ctx.strokeStyle = outlineColor;
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.moveTo(-size * 0.15, -size * 0.35);
+    this.ctx.quadraticCurveTo(0, -size * 0.5, size * 0.15, -size * 0.35);
+    this.ctx.stroke();
+
+    // Ball on top
+    this.ctx.fillStyle = gradient;
+    this.ctx.strokeStyle = outlineColor;
+    this.ctx.lineWidth = 2;
+    this.ctx.beginPath();
+    this.ctx.arc(0, -size * 0.75, size * 0.12, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Small cross on ball
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, -size * 0.83);
+    this.ctx.lineTo(0, -size * 0.67);
+    this.ctx.moveTo(-size * 0.08, -size * 0.75);
+    this.ctx.lineTo(size * 0.08, -size * 0.75);
+    this.ctx.stroke();
+  }
+
+  private drawKnight(size: number, isWhite: boolean): void {
+    const gradient = this.createGradient(size, isWhite);
+    const outlineColor = this.getOutlineColor(isWhite);
+
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+
+    // Base pedestal
+    this.ctx.fillStyle = gradient;
+    this.ctx.strokeStyle = outlineColor;
+    this.ctx.beginPath();
+    this.ctx.ellipse(0, size * 0.5, size * 0.5, size * 0.15, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Neck base
+    this.ctx.beginPath();
+    this.ctx.moveTo(-size * 0.35, size * 0.5);
+    this.ctx.lineTo(-size * 0.3, size * 0.1);
+    this.ctx.lineTo(size * 0.2, size * 0.1);
+    this.ctx.lineTo(size * 0.25, size * 0.5);
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Horse head - elegant curved profile
+    this.ctx.beginPath();
+    // Start at neck
+    this.ctx.moveTo(-size * 0.3, size * 0.1);
+    // Back of neck/mane
+    this.ctx.quadraticCurveTo(-size * 0.35, -size * 0.1, -size * 0.25, -size * 0.35);
+    // Top of head
+    this.ctx.quadraticCurveTo(-size * 0.15, -size * 0.55, 0, -size * 0.6);
+    // Ears
+    this.ctx.lineTo(size * 0.05, -size * 0.7);
+    this.ctx.lineTo(size * 0.15, -size * 0.55);
+    // Front of face/nose
+    this.ctx.quadraticCurveTo(size * 0.35, -size * 0.5, size * 0.45, -size * 0.3);
+    // Muzzle curve
+    this.ctx.quadraticCurveTo(size * 0.5, -size * 0.15, size * 0.45, 0);
+    // Jaw/chin
+    this.ctx.quadraticCurveTo(size * 0.35, size * 0.05, size * 0.2, size * 0.1);
     this.ctx.closePath();
     this.ctx.fill();
     this.ctx.stroke();
 
     // Eye
-    this.ctx.fillStyle = stroke;
+    this.ctx.fillStyle = outlineColor;
     this.ctx.beginPath();
-    this.ctx.arc(size * 0.2, -size * 0.3, size * 0.08, 0, Math.PI * 2);
+    this.ctx.arc(size * 0.15, -size * 0.35, size * 0.07, 0, Math.PI * 2);
     this.ctx.fill();
+
+    // Eye highlight
+    const eyeHighlight = isWhite ? '#ffffff' : '#888888';
+    this.ctx.fillStyle = eyeHighlight;
+    this.ctx.beginPath();
+    this.ctx.arc(size * 0.17, -size * 0.37, size * 0.03, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // Nostril
+    this.ctx.strokeStyle = outlineColor;
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.arc(size * 0.38, -size * 0.2, size * 0.04, 0, Math.PI);
+    this.ctx.stroke();
+
+    // Mane detail
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.moveTo(-size * 0.28, -size * 0.05);
+    this.ctx.quadraticCurveTo(-size * 0.32, -size * 0.2, -size * 0.22, -size * 0.3);
+    this.ctx.stroke();
   }
 
-  private drawPawn(size: number, fill: string, stroke: string): void {
-    this.ctx.fillStyle = fill;
-    this.ctx.strokeStyle = stroke;
-    this.ctx.lineWidth = 2;
+  private drawPawn(size: number, isWhite: boolean): void {
+    const gradient = this.createGradient(size, isWhite);
+    const outlineColor = this.getOutlineColor(isWhite);
 
-    // Base
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+
+    // Base pedestal
+    this.ctx.fillStyle = gradient;
+    this.ctx.strokeStyle = outlineColor;
     this.ctx.beginPath();
-    this.ctx.moveTo(-size * 0.4, size * 0.4);
-    this.ctx.lineTo(-size * 0.3, 0);
-    this.ctx.lineTo(size * 0.3, 0);
-    this.ctx.lineTo(size * 0.4, size * 0.4);
+    this.ctx.ellipse(0, size * 0.5, size * 0.45, size * 0.12, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Lower body - tapered column
+    this.ctx.beginPath();
+    this.ctx.moveTo(-size * 0.3, size * 0.5);
+    this.ctx.lineTo(-size * 0.25, size * 0.1);
+    this.ctx.quadraticCurveTo(-size * 0.25, -size * 0.05, -size * 0.2, -size * 0.1);
+    this.ctx.lineTo(size * 0.2, -size * 0.1);
+    this.ctx.quadraticCurveTo(size * 0.25, -size * 0.05, size * 0.25, size * 0.1);
+    this.ctx.lineTo(size * 0.3, size * 0.5);
     this.ctx.closePath();
     this.ctx.fill();
     this.ctx.stroke();
 
-    // Head
+    // Neck collar
     this.ctx.beginPath();
-    this.ctx.arc(0, -size * 0.3, size * 0.3, 0, Math.PI * 2);
+    this.ctx.ellipse(0, -size * 0.15, size * 0.25, size * 0.08, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Head - rounded ball
+    this.ctx.beginPath();
+    this.ctx.arc(0, -size * 0.4, size * 0.25, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Top finial (small decorative ball)
+    this.ctx.beginPath();
+    this.ctx.arc(0, -size * 0.68, size * 0.08, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.stroke();
   }
