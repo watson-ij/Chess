@@ -298,6 +298,7 @@ export class ChessEngine {
 
   private getPieceAttacks(from: Position, piece: Piece): Position[] {
     // Similar to getPseudoLegalMoves but for attacks (pawns attack diagonally)
+    // Kings don't attack via castling, so we handle them specially
     if (piece.type === 'pawn') {
       const attacks: Position[] = [];
       const direction = piece.color === 'white' ? -1 : 1;
@@ -309,6 +310,25 @@ export class ChessEngine {
       }
       return attacks;
     }
+
+    if (piece.type === 'king') {
+      // King attacks only adjacent squares, not castling
+      const attacks: Position[] = [];
+      const offsets = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1], [0, 1],
+        [1, -1], [1, 0], [1, 1]
+      ];
+
+      for (const [rowOffset, colOffset] of offsets) {
+        const to = { row: from.row + rowOffset, col: from.col + colOffset };
+        if (this.isValidPosition(to)) {
+          attacks.push(to);
+        }
+      }
+      return attacks;
+    }
+
     return this.getPseudoLegalMoves(from, piece);
   }
 
@@ -407,7 +427,15 @@ export class ChessEngine {
 
     // Piece letter (except for pawns)
     if (move.piece.type !== 'pawn') {
-      notation += move.piece.type[0].toUpperCase();
+      const pieceNotation: Record<PieceType, string> = {
+        'king': 'K',
+        'queen': 'Q',
+        'rook': 'R',
+        'bishop': 'B',
+        'knight': 'N',
+        'pawn': ''
+      };
+      notation += pieceNotation[move.piece.type];
     }
 
     // Capture
@@ -423,7 +451,15 @@ export class ChessEngine {
 
     // Promotion
     if (move.promotionPiece) {
-      notation += '=' + move.promotionPiece[0].toUpperCase();
+      const pieceNotation: Record<PieceType, string> = {
+        'queen': 'Q',
+        'rook': 'R',
+        'bishop': 'B',
+        'knight': 'N',
+        'king': 'K',
+        'pawn': ''
+      };
+      notation += '=' + pieceNotation[move.promotionPiece];
     }
 
     return notation;
@@ -709,24 +745,23 @@ export class ChessEngine {
       remainingStr = parts[1];
     } else {
       // Check for disambiguation (no capture)
-      if (remainingStr.length > 2) {
+      // Only disambiguate for non-pawn pieces, or check if we have more than a destination (e.g., Nbd7, R1a3)
+      if (pieceType !== 'pawn' && remainingStr.length > 2) {
         const char = remainingStr[0];
-        if (char >= 'a' && char <= 'h') {
+        // Check if first char is a file (for file disambiguation)
+        if (char >= 'a' && char <= 'h' && remainingStr[1] >= 'a' && remainingStr[1] <= 'h') {
+          // File disambiguation (e.g., Nbd7)
           fromFile = char.charCodeAt(0) - 97;
           remainingStr = remainingStr.substring(1);
         } else if (char >= '1' && char <= '8') {
+          // Rank disambiguation (e.g., R1a3)
           fromRank = 8 - parseInt(char);
           remainingStr = remainingStr.substring(1);
         }
       }
     }
 
-    // Parse destination
-    const destFile = remainingStr.charCodeAt(0) - 97;
-    const destRank = 8 - parseInt(remainingStr[1]);
-    const to: Position = { row: destRank, col: destFile };
-
-    // Check for promotion
+    // Check for promotion before parsing destination
     if (remainingStr.includes('=')) {
       const promoPiece = remainingStr[remainingStr.indexOf('=') + 1];
       const promoMap: Record<string, PieceType> = {
@@ -737,6 +772,11 @@ export class ChessEngine {
       };
       promotionPiece = promoMap[promoPiece];
     }
+
+    // Parse destination (first 2 characters of remainingStr)
+    const destFile = remainingStr.charCodeAt(0) - 97;
+    const destRank = 8 - parseInt(remainingStr[1]);
+    const to: Position = { row: destRank, col: destFile };
 
     // Find the matching piece
     for (let row = 0; row < 8; row++) {
@@ -776,12 +816,12 @@ export class ChessEngine {
       // Extract moves from the line
       const tokens = line.trim().split(/\s+/);
       for (const token of tokens) {
-        // Skip move numbers and results
-        if (token.match(/^\d+\./) || token === '1-0' || token === '0-1' || token === '1/2-1/2' || token === '*') {
+        // Skip results
+        if (token === '1-0' || token === '0-1' || token === '1/2-1/2' || token === '*') {
           continue;
         }
 
-        // Remove move number prefixes from tokens like "1.e4"
+        // Remove move number prefixes from tokens like "1.e4" or "1."
         const cleanToken = token.replace(/^\d+\.+/, '');
         if (cleanToken) {
           moves.push(cleanToken);
