@@ -29,7 +29,16 @@ export class PuzzleValidator {
     // Check if this move exists in the current solution node
     const normalizedMove = this.normalizeMove(move);
 
-    if (!(normalizedMove in this.currentNode)) {
+    // Find the matching key in the solution tree by normalizing all keys
+    let matchingKey: string | null = null;
+    for (const key of Object.keys(this.currentNode)) {
+      if (this.normalizeMove(key) === normalizedMove) {
+        matchingKey = key;
+        break;
+      }
+    }
+
+    if (!matchingKey) {
       // Move is not in the solution
       const alternatives = this.getAlternativeMoves();
       return {
@@ -42,7 +51,7 @@ export class PuzzleValidator {
 
     // Move is correct! Add to path
     this.movePath.push(normalizedMove);
-    const nextNode = this.currentNode[normalizedMove];
+    const nextNode = this.currentNode[matchingKey];
 
     // Check if puzzle is complete
     if (nextNode === 'success') {
@@ -84,13 +93,22 @@ export class PuzzleValidator {
   applyOpponentMove(opponentMove: string): boolean {
     const normalizedMove = this.normalizeMove(opponentMove);
 
-    if (!(normalizedMove in this.currentNode)) {
+    // Find the matching key in the solution tree by normalizing all keys
+    let matchingKey: string | null = null;
+    for (const key of Object.keys(this.currentNode)) {
+      if (this.normalizeMove(key) === normalizedMove) {
+        matchingKey = key;
+        break;
+      }
+    }
+
+    if (!matchingKey) {
       console.error(`Unexpected opponent move: ${opponentMove}`);
       return false;
     }
 
     this.movePath.push(normalizedMove);
-    const nextNode = this.currentNode[normalizedMove];
+    const nextNode = this.currentNode[matchingKey];
 
     // Check if puzzle is complete after opponent's move
     if (nextNode === 'success' || nextNode === 'draw') {
