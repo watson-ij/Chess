@@ -1,0 +1,124 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+#app {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 2.5em;
+}
+
+#game-container {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+#chess-board {
+  border: 3px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#side-panel {
+  min-width: 250px;
+}
+
+#game-info {
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+#turn-indicator {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+#game-status {
+  font-size: 1em;
+  color: #666;
+}
+
+#move-history {
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 8px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+#move-history h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+#moves-list {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.move-pair {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 5px;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.move-pair:hover {
+  background: #e0e0e0;
+}
+
+.move-number {
+  font-weight: bold;
+  color: #666;
+  min-width: 30px;
+}
+
+.move {
+  flex: 1;
+  color: #333;
+}
+
+.move.white {
+  min-width: 80px;
+}
+
+.move.black {
+  min-width: 80px;
+}
+
+@media (max-width: 1024px) {
+  #game-container {
+    flex-direction: column;
+  }
+
+  #side-panel {
+    width: 100%;
+  }
+}
