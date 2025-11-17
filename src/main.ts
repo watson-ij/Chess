@@ -522,7 +522,6 @@ class AppManager {
   private chessApp: ChessApp | null = null;
   private openingApp: OpeningApp | null = null;
   private puzzleSelector: PuzzleSelector | null = null;
-  private puzzleMode: PuzzleMode | null = null;
 
   constructor() {
     this.setupNavigationButtons();
@@ -648,7 +647,7 @@ class AppManager {
     // Create puzzle mode
     const puzzleCanvas = document.getElementById('puzzle-board') as HTMLCanvasElement;
     if (puzzleCanvas) {
-      this.puzzleMode = new PuzzleMode(puzzleCanvas, puzzle, () => {
+      new PuzzleMode(puzzleCanvas, puzzle, () => {
         this.showEndgamesMode();
       });
     }
