@@ -10,7 +10,7 @@ import type { EndgamePuzzle } from './EndgameTypes';
 
 class ChessApp {
   private engine: ChessEngine;
-  private renderer: ChessBoardRenderer;
+  private renderer: ChessBoardRenderer | null = null;
   private selectedSquare: Position | null = null;
   private canvas: HTMLCanvasElement;
 
@@ -35,7 +35,7 @@ class ChessApp {
     const canvas = document.getElementById('chess-board') as HTMLCanvasElement;
     if (!canvas) throw new Error('Canvas not found');
     this.canvas = canvas;
-    this.renderer = new ChessBoardRenderer(canvas);
+    // Note: renderer is created later in startChessGame() when container is visible
 
     this.setupSetupPanelListeners();
   }
@@ -114,6 +114,11 @@ class ChessApp {
     const resetButton = document.getElementById('reset-game');
     if (startButton) startButton.style.display = 'none';
     if (resetButton) resetButton.style.display = 'inline-block';
+
+    // Create renderer now that container is visible (ensures proper canvas dimensions)
+    if (!this.renderer) {
+      this.renderer = new ChessBoardRenderer(this.canvas);
+    }
 
     // Reset the game (keep current position if loaded from FEN/PGN)
     this.selectedSquare = null;
@@ -245,7 +250,7 @@ class ChessApp {
    * Handle chess game click
    */
   private async handleChessClick(event: MouseEvent): Promise<void> {
-    if (this.engine.isGameOver() || this.isAIThinking) return;
+    if (this.engine.isGameOver() || this.isAIThinking || !this.renderer) return;
 
     // In AI mode, only allow player to move their pieces
     if (this.isAIMode && this.engine.getCurrentTurn() !== this.playerColor) {
@@ -339,6 +344,8 @@ class ChessApp {
    * Select a square
    */
   private selectSquare(square: Position): void {
+    if (!this.renderer) return;
+
     this.selectedSquare = square;
     this.renderer.setSelectedSquare(square);
 
@@ -352,6 +359,7 @@ class ChessApp {
    * Render the board
    */
   private render(): void {
+    if (!this.renderer) return;
     const board = this.engine.getBoard();
     this.renderer.render(board);
   }
