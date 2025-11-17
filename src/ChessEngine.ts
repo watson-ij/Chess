@@ -919,4 +919,30 @@ export class ChessEngine {
 
     return pgn.trim();
   }
+
+  /**
+   * Get board state at a specific move index
+   * @param moveIndex The index of the move (0-based). Use -1 for initial position.
+   * @returns The board state at that position
+   */
+  public getBoardAtMove(moveIndex: number): Board {
+    // If requesting initial position or before any moves
+    if (moveIndex < 0) {
+      return this.createInitialBoard();
+    }
+
+    // Replay moves up to the requested index
+    const moves = this.state.moveHistory;
+    const targetIndex = Math.min(moveIndex, moves.length - 1);
+
+    // Create a temporary engine to replay moves
+    const tempEngine = new ChessEngine();
+
+    for (let i = 0; i <= targetIndex; i++) {
+      const move = moves[i];
+      tempEngine.makeMove(move.from, move.to, move.promotionPiece);
+    }
+
+    return tempEngine.getBoard();
+  }
 }
