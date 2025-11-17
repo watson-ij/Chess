@@ -5,6 +5,7 @@ import { StockfishAI } from './StockfishAI';
 import { OpeningApp } from './OpeningApp';
 import { PuzzleMode } from './PuzzleMode';
 import { PuzzleSelector } from './PuzzleSelector';
+import { ENDGAME_PUZZLES } from './PuzzleDatabase';
 import type { Position, PieceColor } from './types';
 import type { EndgamePuzzle } from './EndgameTypes';
 
@@ -606,6 +607,7 @@ class AppManager {
   private chessApp: ChessApp | null = null;
   private openingApp: OpeningApp | null = null;
   private puzzleSelector: PuzzleSelector | null = null;
+  private currentPuzzleIndex: number = 0;
 
   constructor() {
     this.setupNavigationButtons();
@@ -710,6 +712,9 @@ class AppManager {
   }
 
   private startPuzzle(puzzle: EndgamePuzzle): void {
+    // Find the index of the current puzzle
+    this.currentPuzzleIndex = ENDGAME_PUZZLES.findIndex(p => p.id === puzzle.id);
+
     // Hide puzzle selection, show puzzle game
     const puzzleSelection = document.getElementById('puzzle-selection');
     const puzzleGame = document.getElementById('puzzle-game');
@@ -733,8 +738,17 @@ class AppManager {
     if (puzzleCanvas) {
       new PuzzleMode(puzzleCanvas, puzzle, () => {
         this.showEndgamesMode();
+      }, () => {
+        this.loadNextPuzzle();
       });
     }
+  }
+
+  private loadNextPuzzle(): void {
+    // Get the next puzzle (wrap around to the beginning if at the end)
+    const nextIndex = (this.currentPuzzleIndex + 1) % ENDGAME_PUZZLES.length;
+    const nextPuzzle = ENDGAME_PUZZLES[nextIndex];
+    this.startPuzzle(nextPuzzle);
   }
 }
 

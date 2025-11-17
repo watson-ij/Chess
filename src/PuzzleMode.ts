@@ -29,20 +29,24 @@ export class PuzzleMode {
   private hintButton: HTMLButtonElement;
   private resetButton: HTMLButtonElement;
   private backButton: HTMLButtonElement;
+  private nextPuzzleButton: HTMLButtonElement;
   private educational: HTMLElement;
 
   private onBack: () => void;
+  private onNextPuzzle?: () => void;
 
   constructor(
     canvas: HTMLCanvasElement,
     puzzle: EndgamePuzzle,
-    onBack: () => void
+    onBack: () => void,
+    onNextPuzzle?: () => void
   ) {
     this.puzzle = puzzle;
     this.engine = new ChessEngine();
     this.renderer = new ChessBoardRenderer(canvas);
     this.validator = new PuzzleValidator(puzzle);
     this.onBack = onBack;
+    this.onNextPuzzle = onNextPuzzle;
 
     // Initialize UI elements
     this.puzzleTitle = document.getElementById('puzzle-title')!;
@@ -54,6 +58,7 @@ export class PuzzleMode {
     this.hintButton = document.getElementById('hint-button') as HTMLButtonElement;
     this.resetButton = document.getElementById('reset-button') as HTMLButtonElement;
     this.backButton = document.getElementById('back-button') as HTMLButtonElement;
+    this.nextPuzzleButton = document.getElementById('next-puzzle-button') as HTMLButtonElement;
     this.educational = document.getElementById('educational')!;
 
     this.initializePuzzle();
@@ -71,6 +76,7 @@ export class PuzzleMode {
     this.hintsUsed = 0;
     this.attempts = 0;
     this.isComplete = false;
+    this.nextPuzzleButton.style.display = 'none';
     this.render();
   }
 
@@ -91,6 +97,14 @@ export class PuzzleMode {
     this.backButton.addEventListener('click', () => {
       this.cleanup();
       this.onBack();
+    });
+
+    // Next puzzle button
+    this.nextPuzzleButton.addEventListener('click', () => {
+      if (this.onNextPuzzle) {
+        this.cleanup();
+        this.onNextPuzzle();
+      }
     });
   }
 
@@ -287,6 +301,11 @@ export class PuzzleMode {
 
     this.showEducationalInfo();
     this.hintButton.disabled = true;
+
+    // Show next puzzle button if callback is provided
+    if (this.onNextPuzzle) {
+      this.nextPuzzleButton.style.display = 'inline-block';
+    }
   }
 
   /**
