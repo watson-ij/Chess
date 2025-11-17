@@ -489,4 +489,368 @@ export class ChessEngine {
     }
     return '';
   }
+
+  /**
+   * Load a position from FEN (Forsyth-Edwards Notation)
+   * Example: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+   */
+  public loadFEN(fen: string): void {
+    const parts = fen.split(' ');
+    if (parts.length < 4) {
+      throw new Error('Invalid FEN string');
+    }
+
+    const [position, turn, castling, enPassant] = parts;
+
+    // Parse board position
+    const board: Board = Array(8).fill(null).map(() => Array(8).fill(null));
+    const ranks = position.split('/');
+
+    if (ranks.length !== 8) {
+      throw new Error('Invalid FEN: must have 8 ranks');
+    }
+
+    for (let row = 0; row < 8; row++) {
+      let col = 0;
+      for (const char of ranks[row]) {
+        if (char >= '1' && char <= '8') {
+          col += parseInt(char);
+        } else {
+          const piece = this.fenCharToPiece(char);
+          if (piece) {
+            board[row][col] = piece;
+            col++;
+          }
+        }
+      }
+    }
+
+    // Parse turn
+    const currentTurn: PieceColor = turn === 'w' ? 'white' : 'black';
+
+    // Parse castling rights
+    const canCastleKingside = {
+      white: castling.includes('K'),
+      black: castling.includes('k')
+    };
+    const canCastleQueenside = {
+      white: castling.includes('Q'),
+      black: castling.includes('q')
+    };
+
+    // Parse en passant target
+    let enPassantTarget: Position | null = null;
+    if (enPassant !== '-') {
+      const col = enPassant.charCodeAt(0) - 97; // 'a' = 0
+      const row = 8 - parseInt(enPassant[1]);
+      enPassantTarget = { row, col };
+    }
+
+    // Update state
+    this.state = {
+      board,
+      currentTurn,
+      moveHistory: [],
+      isCheck: false,
+      isCheckmate: false,
+      isStalemate: false,
+      canCastleKingside,
+      canCastleQueenside,
+      enPassantTarget,
+    };
+
+    // Update game state (check/checkmate/stalemate)
+    this.updateGameState();
+  }
+
+  private fenCharToPiece(char: string): Piece | null {
+    const color: PieceColor = char === char.toUpperCase() ? 'white' : 'black';
+    const lowerChar = char.toLowerCase();
+
+    const typeMap: Record<string, PieceType> = {
+      'p': 'pawn',
+      'n': 'knight',
+      'b': 'bishop',
+      'r': 'rook',
+      'q': 'queen',
+      'k': 'king'
+    };
+
+    const type = typeMap[lowerChar];
+    return type ? { type, color } : null;
+  }
+
+  /**
+   * Export current position to FEN notation
+   */
+  public toFEN(): string {
+    let fen = '';
+
+    // Board position
+    for (let row = 0; row < 8; row++) {
+      let emptyCount = 0;
+      for (let col = 0; col < 8; col++) {
+        const piece = this.state.board[row][col];
+        if (piece) {
+          if (emptyCount > 0) {
+            fen += emptyCount;
+            emptyCount = 0;
+          }
+          fen += this.pieceToFenChar(piece);
+        } else {
+          emptyCount++;
+        }
+      }
+      if (emptyCount > 0) {
+        fen += emptyCount;
+      }
+      if (row < 7) {
+        fen += '/';
+      }
+    }
+
+    // Turn
+    fen += ' ' + (this.state.currentTurn === 'white' ? 'w' : 'b');
+
+    // Castling rights
+    let castling = '';
+    if (this.state.canCastleKingside.white) castling += 'K';
+    if (this.state.canCastleQueenside.white) castling += 'Q';
+    if (this.state.canCastleKingside.black) castling += 'k';
+    if (this.state.canCastleQueenside.black) castling += 'q';
+    fen += ' ' + (castling || '-');
+
+    // En passant
+    if (this.state.enPassantTarget) {
+      const col = String.fromCharCode(97 + this.state.enPassantTarget.col);
+      const row = 8 - this.state.enPassantTarget.row;
+      fen += ' ' + col + row;
+    } else {
+      fen += ' -';
+    }
+
+    // Halfmove and fullmove (not tracked, so default to 0 and 1)
+    fen += ' 0 1';
+
+    return fen;
+  }
+
+  private pieceToFenChar(piece: Piece): string {
+    const charMap: Record<PieceType, string> = {
+      'pawn': 'p',
+      'knight': 'n',
+      'bishop': 'b',
+      'rook': 'r',
+      'queen': 'q',
+      'king': 'k'
+    };
+
+    const char = charMap[piece.type];
+    return piece.color === 'white' ? char.toUpperCase() : char;
+  }
+
+  /**
+   * Make a move using SAN (Standard Algebraic Notation)
+   * Examples: "e4", "Nf3", "O-O", "Bxf7+", "exd8=Q#"
+   */
+  public makeSANMove(san: string): boolean {
+    // Remove check/checkmate markers
+    san = san.replace(/[+#]$/, '');
+
+    // Handle castling
+    if (san === 'O-O' || san === 'O-O-O') {
+      const row = this.state.currentTurn === 'white' ? 7 : 0;
+      const kingCol = 4;
+      const targetCol = san === 'O-O' ? 6 : 2;
+      return this.makeMove({ row, col: kingCol }, { row, col: targetCol });
+    }
+
+    // Parse the move
+    let pieceType: PieceType = 'pawn';
+    let fromFile: number | null = null;
+    let fromRank: number | null = null;
+    let promotionPiece: PieceType | undefined;
+
+    // Check for piece type
+    const firstChar = san[0];
+    let index = 0;
+    if (['K', 'Q', 'R', 'B', 'N'].includes(firstChar)) {
+      const pieceMap: Record<string, PieceType> = {
+        'K': 'king',
+        'Q': 'queen',
+        'R': 'rook',
+        'B': 'bishop',
+        'N': 'knight'
+      };
+      pieceType = pieceMap[firstChar];
+      index = 1;
+    }
+
+    // Parse the rest
+    let remainingStr = san.substring(index);
+
+    // Check for capture
+    if (remainingStr.includes('x')) {
+      const parts = remainingStr.split('x');
+
+      // Part before 'x' might be disambiguation or pawn file
+      if (parts[0].length > 0) {
+        if (parts[0].length === 2) {
+          // Full square disambiguation (rare)
+          fromFile = parts[0].charCodeAt(0) - 97;
+          fromRank = 8 - parseInt(parts[0][1]);
+        } else if (parts[0][0] >= 'a' && parts[0][0] <= 'h') {
+          fromFile = parts[0].charCodeAt(0) - 97;
+        } else {
+          fromRank = 8 - parseInt(parts[0]);
+        }
+      }
+
+      remainingStr = parts[1];
+    } else {
+      // Check for disambiguation (no capture)
+      if (remainingStr.length > 2) {
+        const char = remainingStr[0];
+        if (char >= 'a' && char <= 'h') {
+          fromFile = char.charCodeAt(0) - 97;
+          remainingStr = remainingStr.substring(1);
+        } else if (char >= '1' && char <= '8') {
+          fromRank = 8 - parseInt(char);
+          remainingStr = remainingStr.substring(1);
+        }
+      }
+    }
+
+    // Parse destination
+    const destFile = remainingStr.charCodeAt(0) - 97;
+    const destRank = 8 - parseInt(remainingStr[1]);
+    const to: Position = { row: destRank, col: destFile };
+
+    // Check for promotion
+    if (remainingStr.includes('=')) {
+      const promoPiece = remainingStr[remainingStr.indexOf('=') + 1];
+      const promoMap: Record<string, PieceType> = {
+        'Q': 'queen',
+        'R': 'rook',
+        'B': 'bishop',
+        'N': 'knight'
+      };
+      promotionPiece = promoMap[promoPiece];
+    }
+
+    // Find the matching piece
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const piece = this.state.board[row][col];
+        if (!piece || piece.type !== pieceType || piece.color !== this.state.currentTurn) {
+          continue;
+        }
+
+        // Check disambiguation
+        if (fromFile !== null && col !== fromFile) continue;
+        if (fromRank !== null && row !== fromRank) continue;
+
+        // Check if this piece can legally move to the destination
+        const legalMoves = this.getLegalMoves({ row, col });
+        if (legalMoves.some(move => move.row === to.row && move.col === to.col)) {
+          return this.makeMove({ row, col }, to, promotionPiece);
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Import a game from PGN (Portable Game Notation)
+   */
+  public loadPGN(pgn: string): boolean {
+    // Parse PGN headers (optional)
+    const lines = pgn.split('\n');
+    const moves: string[] = [];
+
+    for (const line of lines) {
+      // Skip headers and empty lines
+      if (line.startsWith('[') || line.trim() === '') continue;
+
+      // Extract moves from the line
+      const tokens = line.trim().split(/\s+/);
+      for (const token of tokens) {
+        // Skip move numbers and results
+        if (token.match(/^\d+\./) || token === '1-0' || token === '0-1' || token === '1/2-1/2' || token === '*') {
+          continue;
+        }
+
+        // Remove move number prefixes from tokens like "1.e4"
+        const cleanToken = token.replace(/^\d+\.+/, '');
+        if (cleanToken) {
+          moves.push(cleanToken);
+        }
+      }
+    }
+
+    // Reset to starting position
+    this.state = this.initializeGame();
+
+    // Play through all moves
+    for (const move of moves) {
+      if (!this.makeSANMove(move)) {
+        console.error(`Failed to parse move: ${move}`);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Export the game to PGN (Portable Game Notation)
+   */
+  public toPGN(headers: Record<string, string> = {}): string {
+    let pgn = '';
+
+    // Add headers
+    const defaultHeaders = {
+      'Event': '?',
+      'Site': '?',
+      'Date': new Date().toISOString().split('T')[0].replace(/-/g, '.'),
+      'Round': '?',
+      'White': '?',
+      'Black': '?',
+      'Result': '*',
+      ...headers
+    };
+
+    for (const [key, value] of Object.entries(defaultHeaders)) {
+      pgn += `[${key} "${value}"]\n`;
+    }
+
+    pgn += '\n';
+
+    // Add moves
+    const moves = this.getMoveHistory();
+    for (let i = 0; i < moves.length; i++) {
+      if (i % 2 === 0) {
+        pgn += `${Math.floor(i / 2) + 1}. `;
+      }
+      pgn += moves[i].notation + ' ';
+
+      // Line break every few moves for readability
+      if (i % 8 === 7) {
+        pgn += '\n';
+      }
+    }
+
+    // Add result
+    if (this.state.isCheckmate) {
+      const result = this.state.currentTurn === 'white' ? '0-1' : '1-0';
+      pgn += result;
+    } else if (this.state.isStalemate) {
+      pgn += '1/2-1/2';
+    } else {
+      pgn += '*';
+    }
+
+    return pgn.trim();
+  }
 }
