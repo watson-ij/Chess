@@ -36,6 +36,13 @@ export class PuzzleMode {
   private onNextPuzzle?: () => void;
   private prefix: string;
 
+  // Store bound event handlers for cleanup
+  private boundHandleClick: (e: MouseEvent) => void;
+  private boundShowHint: () => void;
+  private boundResetPuzzle: () => void;
+  private boundBackClick: () => void;
+  private boundNextPuzzleClick: () => void;
+
   constructor(
     canvas: HTMLCanvasElement,
     puzzle: EndgamePuzzle,
@@ -64,6 +71,21 @@ export class PuzzleMode {
     this.nextPuzzleButton = document.getElementById(`${this.prefix}next-puzzle-button`) as HTMLButtonElement;
     this.educational = document.getElementById(`${this.prefix}educational`)!
 
+    // Bind event handlers for proper cleanup
+    this.boundHandleClick = (e: MouseEvent) => this.handleClick(e);
+    this.boundShowHint = () => this.showHint();
+    this.boundResetPuzzle = () => this.resetPuzzle();
+    this.boundBackClick = () => {
+      this.cleanup();
+      this.onBack();
+    };
+    this.boundNextPuzzleClick = () => {
+      if (this.onNextPuzzle) {
+        this.cleanup();
+        this.onNextPuzzle();
+      }
+    };
+
     this.initializePuzzle();
     this.setupEventListeners();
     this.updateUI();
@@ -88,27 +110,19 @@ export class PuzzleMode {
    */
   private setupEventListeners(): void {
     // Canvas click for moves
-    this.renderer.getCanvas().addEventListener('click', (e) => this.handleClick(e));
+    this.renderer.getCanvas().addEventListener('click', this.boundHandleClick);
 
     // Hint button
-    this.hintButton.addEventListener('click', () => this.showHint());
+    this.hintButton.addEventListener('click', this.boundShowHint);
 
     // Reset button
-    this.resetButton.addEventListener('click', () => this.resetPuzzle());
+    this.resetButton.addEventListener('click', this.boundResetPuzzle);
 
     // Back button
-    this.backButton.addEventListener('click', () => {
-      this.cleanup();
-      this.onBack();
-    });
+    this.backButton.addEventListener('click', this.boundBackClick);
 
     // Next puzzle button
-    this.nextPuzzleButton.addEventListener('click', () => {
-      if (this.onNextPuzzle) {
-        this.cleanup();
-        this.onNextPuzzle();
-      }
-    });
+    this.nextPuzzleButton.addEventListener('click', this.boundNextPuzzleClick);
   }
 
   /**
@@ -381,7 +395,11 @@ export class PuzzleMode {
    * Cleanup
    */
   private cleanup(): void {
-    // Remove event listeners
-    this.renderer.getCanvas().removeEventListener('click', this.handleClick);
+    // Remove all event listeners
+    this.renderer.getCanvas().removeEventListener('click', this.boundHandleClick);
+    this.hintButton.removeEventListener('click', this.boundShowHint);
+    this.resetButton.removeEventListener('click', this.boundResetPuzzle);
+    this.backButton.removeEventListener('click', this.boundBackClick);
+    this.nextPuzzleButton.removeEventListener('click', this.boundNextPuzzleClick);
   }
 }
