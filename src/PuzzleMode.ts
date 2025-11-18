@@ -31,6 +31,9 @@ export class PuzzleMode {
   private backButton: HTMLButtonElement;
   private nextPuzzleButton: HTMLButtonElement;
   private educational: HTMLElement;
+  private flipButton: HTMLElement | null;
+  private sizeSlider: HTMLInputElement | null;
+  private sizeDisplay: HTMLElement | null;
 
   private onBack: () => void;
   private onNextPuzzle?: () => void;
@@ -42,6 +45,8 @@ export class PuzzleMode {
   private boundResetPuzzle: () => void;
   private boundBackClick: () => void;
   private boundNextPuzzleClick: () => void;
+  private boundFlipBoard: () => void;
+  private boundSizeSliderInput: () => void;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -70,6 +75,9 @@ export class PuzzleMode {
     this.backButton = document.getElementById(`${this.prefix}back-button`) as HTMLButtonElement;
     this.nextPuzzleButton = document.getElementById(`${this.prefix}next-puzzle-button`) as HTMLButtonElement;
     this.educational = document.getElementById(`${this.prefix}educational`)!
+    this.flipButton = document.getElementById(`${this.prefix}puzzle-flip-board-btn`);
+    this.sizeSlider = document.getElementById(`${this.prefix}puzzle-board-size-slider`) as HTMLInputElement;
+    this.sizeDisplay = document.getElementById(`${this.prefix}puzzle-board-size-display`);
 
     // Bind event handlers for proper cleanup
     this.boundHandleClick = (e: MouseEvent) => this.handleClick(e);
@@ -83,6 +91,16 @@ export class PuzzleMode {
       if (this.onNextPuzzle) {
         this.cleanup();
         this.onNextPuzzle();
+      }
+    };
+    this.boundFlipBoard = () => {
+      this.renderer.flipBoard();
+    };
+    this.boundSizeSliderInput = () => {
+      if (this.sizeSlider && this.sizeDisplay) {
+        const size = parseInt(this.sizeSlider.value);
+        this.sizeDisplay.textContent = `${size}px`;
+        this.renderer.setBoardSize(size);
       }
     };
 
@@ -102,6 +120,15 @@ export class PuzzleMode {
     this.attempts = 0;
     this.isComplete = false;
     this.nextPuzzleButton.style.display = 'none';
+
+    // Auto-flip the board to the perspective of the side whose turn it is to move
+    const currentTurn = this.engine.getCurrentTurn();
+    if (currentTurn === 'black') {
+      this.renderer.setFlipped(true);
+    } else {
+      this.renderer.setFlipped(false);
+    }
+
     this.render();
   }
 
@@ -123,6 +150,16 @@ export class PuzzleMode {
 
     // Next puzzle button
     this.nextPuzzleButton.addEventListener('click', this.boundNextPuzzleClick);
+
+    // Board control buttons
+    if (this.flipButton) {
+      this.flipButton.addEventListener('click', this.boundFlipBoard);
+    }
+
+    // Board size slider
+    if (this.sizeSlider) {
+      this.sizeSlider.addEventListener('input', this.boundSizeSliderInput);
+    }
   }
 
   /**
@@ -401,5 +438,13 @@ export class PuzzleMode {
     this.resetButton.removeEventListener('click', this.boundResetPuzzle);
     this.backButton.removeEventListener('click', this.boundBackClick);
     this.nextPuzzleButton.removeEventListener('click', this.boundNextPuzzleClick);
+
+    if (this.flipButton) {
+      this.flipButton.removeEventListener('click', this.boundFlipBoard);
+    }
+
+    if (this.sizeSlider) {
+      this.sizeSlider.removeEventListener('input', this.boundSizeSliderInput);
+    }
   }
 }
