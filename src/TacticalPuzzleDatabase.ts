@@ -11,23 +11,31 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     id: 'fork-001',
     theme: 'fork',
     title: 'Classic Knight Fork',
-    description: 'Use a knight fork to win material',
-    fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1',
+    description: 'Fork the king and rook with a check',
+    fen: 'r1bqkb1r/pppp1ppp/2n5/3Np3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1',
     playerSide: 'white',
     objective: 'win-material',
-    objectiveDescription: 'Win a piece with a knight fork',
+    objectiveDescription: 'Win the rook with a knight fork',
     difficulty: 1,
     solution: {
-      'Nxe5': {
-        'Nxe5': 'success'
+      'Nc7+': {
+        'Kd8': {
+          'Nxa8': 'success'
+        },
+        'Kf8': {
+          'Nxa8': 'success'
+        },
+        'Ke7': {
+          'Nxa8': 'success'
+        }
       }
     },
     hints: [
-      'Look for a piece that can attack two valuable pieces at once',
-      'The knight on f3 can jump to a central square',
-      'Nxe5 forks the king and the knight on c6'
+      'Look for a square where your knight can attack two valuable pieces',
+      'The black king is still in the center',
+      'Nc7+ gives check and attacks the rook on a8!'
     ],
-    educational: 'A knight fork is one of the most common tactical motifs. Knights are particularly effective at forking because they can attack squares that other pieces cannot reach simultaneously. Always look for opportunities to place your knight where it attacks two or more valuable enemy pieces.',
+    educational: 'A knight fork is one of the most common tactical motifs. This is a classic example where the knight forks the king and rook. Since it\'s check, the opponent must move the king, allowing you to capture the rook on the next move. Knights are particularly effective at forking because they can attack squares that other pieces cannot reach simultaneously.',
     tags: ['beginner', 'knight-fork', 'fundamental']
   },
   {
@@ -35,23 +43,27 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'fork',
     title: 'Royal Fork',
     description: 'Fork the king and queen',
-    fen: 'r2qk2r/ppp2ppp/2n5/3p4/1b1P4/2N2N2/PPP2PPP/R1BQR1K1 b kq - 0 1',
+    fen: 'r1bqk2r/pppp1ppp/8/4p3/4n3/8/PPPP1PPP/RNQ2RK1 b kq - 0 1',
     playerSide: 'black',
     objective: 'win-material',
     objectiveDescription: 'Win the queen with a royal fork',
     difficulty: 2,
     solution: {
-      'Nxd4': {
-        'Qxd4': 'success',
-        'Nxd4': 'success'
+      'Ne2+': {
+        'Kh1': {
+          'Nxc1': 'success'
+        },
+        'Kf1': {
+          'Nxc1': 'success'
+        }
       }
     },
     hints: [
       'The white king and queen are on vulnerable squares',
-      'Your knight on c6 can deliver a devastating blow',
-      'Nxd4 forks the king on g1 and queen on d1'
+      'Your knight on e4 can deliver a devastating blow',
+      'Ne2+ gives check and forks the king on g1 and queen on c1!'
     ],
-    educational: 'A "royal fork" is when a knight simultaneously attacks the enemy king and queen. This is often decisive as the opponent must move the king, allowing you to capture the queen on the next move.',
+    educational: 'A "royal fork" is when a knight simultaneously attacks the enemy king and queen. This is often decisive as the opponent must move the king, allowing you to capture the queen on the next move. Always look for opportunities to place your knight where it can fork the king with other valuable pieces.',
     tags: ['intermediate', 'royal-fork', 'winning-queen']
   },
   {
@@ -59,32 +71,28 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'fork',
     title: 'Queen Fork Setup',
     description: 'Set up a devastating queen fork',
-    fen: 'r1b1k2r/pppp1ppp/2n2q2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 0 1',
+    fen: 'r2qkb1r/ppp2ppp/2n5/3np3/2B5/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1',
     playerSide: 'white',
     objective: 'win-material',
-    objectiveDescription: 'Win material with a queen fork',
+    objectiveDescription: 'Win the queen with a fork',
     difficulty: 3,
     solution: {
-      'Bxf7+': {
-        'Kxf7': {
-          'Ng5+': {
-            'Kg8': 'success',
-            'Kg6': 'success',
-            'Ke8': 'success'
-          }
+      'Nxe5': {
+        'Nxe5': {
+          'Qxd8+': 'success'
         },
-        'Kd8': {
-          'Ng5': 'success'
+        'Qe7': {
+          'Nxc6': 'success'
         }
       }
     },
     hints: [
-      'A sacrifice can set up a powerful fork',
-      'The bishop can check the king',
-      'After Bxf7+, the knight can fork king and queen with Ng5+'
+      'Capture the central pawn to threaten multiple pieces',
+      'Your knight can attack both the queen and knight',
+      'After Nxe5, you threaten both Qxd8+ and Nxc6'
     ],
-    educational: 'Sometimes you need to sacrifice material to set up a winning tactic. Here, sacrificing the bishop opens up the king and allows the knight to deliver a devastating fork that wins the queen.',
-    tags: ['intermediate', 'sacrifice', 'queen-fork']
+    educational: 'Sometimes a fork doesn\'t happen immediately but creates a double threat that wins material. Here, after Nxe5, you threaten to capture the queen with check and also threaten the knight on c6, winning material by force.',
+    tags: ['intermediate', 'fork', 'double-threat']
   },
 
   // ========== PIN ==========
@@ -93,22 +101,23 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'pin',
     title: 'Absolute Pin',
     description: 'Exploit an absolute pin to win material',
-    fen: 'r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1',
+    fen: 'r2qkb1r/ppp2ppp/2n5/3pP3/2Bn4/8/PPP2PPP/RNBQK2R w KQkq - 0 1',
     playerSide: 'white',
     objective: 'win-material',
     objectiveDescription: 'Win the pinned knight',
     difficulty: 1,
     solution: {
-      'Nxe5': {
-        'Nxe5': 'success'
+      'Qxe4': {
+        'dxe4': 'success',
+        'Qe7': 'success'
       }
     },
     hints: [
-      'The knight on e4 cannot move',
-      'It is pinned to the king by your bishop',
-      'Simply capture it with Nxe5'
+      'The knight on e4 is pinned to the king on e8',
+      'Your bishop on c4 creates an absolute pin along the diagonal',
+      'The knight cannot move without exposing the king to check - capture it!'
     ],
-    educational: 'An absolute pin occurs when a piece cannot legally move because doing so would expose the king to check. The pinned piece is essentially paralyzed and can often be captured or exploited.',
+    educational: 'An absolute pin occurs when a piece cannot legally move because doing so would expose the king to check. Here, the black knight on e4 is pinned by your bishop on c4 to the black king on e8. The pinned piece is essentially paralyzed and can often be captured or exploited.',
     tags: ['beginner', 'absolute-pin', 'fundamental']
   },
   {
@@ -146,7 +155,7 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'pin',
     title: 'Pinning to Win',
     description: 'Create a pin to win the queen',
-    fen: 'r1bqk2r/ppp2ppp/2n5/2bpp3/4P3/3P1N2/PPP2PPP/RNBQR1K1 w kq - 0 1',
+    fen: 'r2qkb1r/ppp2ppp/2n5/3pp3/4P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1',
     playerSide: 'white',
     objective: 'win-material',
     objectiveDescription: 'Win the queen',
@@ -159,16 +168,17 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
         'Be7': {
           'Bxd8': 'success'
         },
-        'Qd7': 'success',
-        'Qd6': 'success'
+        'Qe7': 'success',
+        'Qc7': 'success',
+        'Qb6': 'success'
       }
     },
     hints: [
-      'The black queen and king are on the same diagonal',
-      'Your light-squared bishop can create a pin',
-      'Bg5 pins the queen to the king'
+      'The black queen and king are on the same file',
+      'Your dark-squared bishop can attack the queen',
+      'Bg5 attacks the queen, and if it moves, you can attack the king!'
     ],
-    educational: 'Creating pins is as important as exploiting them. When enemy pieces align on ranks, files, or diagonals, look for opportunities to pin valuable pieces to the king or other important pieces.',
+    educational: 'Creating pins is as important as exploiting them. While this is more of a "queen trap" than a pure pin, the principle is similar - the queen is attacked and has limited escape squares. When enemy pieces are poorly placed, look for ways to attack valuable pieces and restrict their movement.',
     tags: ['intermediate', 'creating-pins', 'winning-queen']
   },
 
@@ -178,24 +188,30 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'skewer',
     title: 'Back Rank Skewer',
     description: 'Skewer the king and rook',
-    fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+    fen: '3r2k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
     playerSide: 'white',
     objective: 'win-material',
     objectiveDescription: 'Win the rook',
     difficulty: 1,
     solution: {
       'Re8+': {
-        'Kh7': 'success',
-        'Kg7': 'success',
-        'Kf7': 'success'
+        'Kh7': {
+          'Rxd8': 'success'
+        },
+        'Kg7': {
+          'Rxd8': 'success'
+        },
+        'Kf7': {
+          'Rxd8': 'success'
+        }
       }
     },
     hints: [
-      'The black king has no escape squares',
+      'The black king and rook are on the same file',
       'Your rook can give check',
-      'After the king moves, you win the back rank'
+      'After Re8+, the king must move and you win the rook on d8!'
     ],
-    educational: 'A skewer is the opposite of a pin - you attack a valuable piece, forcing it to move and exposing a less valuable piece behind it. Rooks and bishops are particularly effective at skewering.',
+    educational: 'A skewer is the opposite of a pin - you attack a valuable piece (the king), forcing it to move and exposing a less valuable piece (the rook) behind it. Rooks and bishops are particularly effective at skewering along ranks, files, and diagonals.',
     tags: ['beginner', 'skewer', 'endgame']
   },
   {
@@ -203,26 +219,30 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'skewer',
     title: 'Diagonal Skewer',
     description: 'Skewer queen and rook on the diagonal',
-    fen: 'r4rk1/ppp2ppp/3q4/3p4/3P4/2PB4/PP3PPP/R4RK1 w - - 0 1',
+    fen: 'r4rk1/ppp2ppp/8/3q4/3P4/2P5/PP3PPP/R1B2RK1 w - - 0 1',
     playerSide: 'white',
     objective: 'win-material',
     objectiveDescription: 'Win the rook',
     difficulty: 2,
     solution: {
-      'Bb5': {
-        'Qxb5': 'success',
-        'Qe7': 'success',
-        'Qc7': 'success',
-        'Qb6': 'success',
-        'Qa6': 'success'
+      'Bb2+': {
+        'Qf7': {
+          'Bxa8': 'success'
+        },
+        'Qe5': {
+          'Bxa8': 'success'
+        },
+        'f6': {
+          'Bxa8': 'success'
+        }
       }
     },
     hints: [
-      'The black queen and rook are on the same diagonal',
-      'Your bishop can attack both',
-      'Bb5 skewers the queen and rook on a8'
+      'The black queen and rook on a8 are on the same diagonal',
+      'Your bishop can attack the queen with check',
+      'Bb2+ skewers the queen and the rook on a8!'
     ],
-    educational: 'Look for enemy pieces aligned on diagonals, ranks, or files. When a more valuable piece is in front, you can skewer them, forcing the valuable piece to move and winning the piece behind.',
+    educational: 'Look for enemy pieces aligned on diagonals, ranks, or files. When a more valuable piece is in front, you can skewer them, forcing the valuable piece to move and winning the piece behind. Here, the queen must move from check, exposing the rook.',
     tags: ['intermediate', 'diagonal-skewer']
   },
 
@@ -232,23 +252,25 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'discovered-attack',
     title: 'Discovered Check',
     description: 'Use a discovered check to win material',
-    fen: 'r1bqkb1r/pppp1ppp/2n5/4p3/2BnP3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1',
+    fen: 'r1bqk2r/pppp1ppp/2n5/2b1p3/2B1P2N/8/PPPP1PPP/RNBQK2R w KQkq - 0 1',
     playerSide: 'white',
     objective: 'win-material',
     objectiveDescription: 'Win the queen',
     difficulty: 2,
     solution: {
-      'Nxd4': {
-        'exd4': 'success',
-        'Qxd4': 'success'
+      'Nf5': {
+        'Qe7': 'success',
+        'Qf6': 'success',
+        'Qh4': 'success',
+        'Qg5': 'success'
       }
     },
     hints: [
-      'Your bishop on c4 is aiming at the king',
-      'The knight on f3 is blocking the diagonal',
-      'Moving the knight with check wins the queen on d8'
+      'Your bishop on c4 is aiming at f7, next to the king',
+      'The knight on h4 can move and discover an attack',
+      'Moving the knight discovers check and attacks the queen!'
     ],
-    educational: 'A discovered attack occurs when moving one piece exposes an attack from another piece behind it. Discovered checks are particularly powerful because the opponent must respond to the check while you can capture freely with your moving piece.',
+    educational: 'A discovered attack occurs when moving one piece exposes an attack from another piece behind it. Discovered checks are particularly powerful because the opponent must respond to the check while you can capture freely with your moving piece. Here, moving the knight discovers check from the bishop while simultaneously attacking the queen.',
     tags: ['intermediate', 'discovered-check', 'double-attack']
   },
   {
@@ -256,20 +278,20 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'discovered-attack',
     title: 'Double Check Mate',
     description: 'Deliver checkmate with a double check',
-    fen: '5rk1/pp3ppp/2p5/8/1b1pN3/6P1/PP2PPBP/5RK1 w - - 0 1',
+    fen: '5rk1/pp3ppp/2p5/6N1/1b1p4/6P1/PP2PPBP/5RK1 w - - 0 1',
     playerSide: 'white',
     objective: 'checkmate',
     objectiveDescription: 'Checkmate in one move',
     difficulty: 3,
     solution: {
-      'Nf6+': 'success'
+      'Ne6#': 'success'
     },
     hints: [
-      'Both your knight and rook can give check',
-      'Moving the knight will discover check from the rook',
-      'The king will have no escape from double check'
+      'Your knight can give check',
+      'Your bishop on g2 is aiming at the king along the diagonal',
+      'Moving the knight will also uncover the bishop - double check mate!'
     ],
-    educational: 'A double check is when two pieces give check simultaneously. The only way to escape double check is to move the king - you cannot block both checks or capture both checking pieces. This makes double checks extremely powerful.',
+    educational: 'A double check is when two pieces give check simultaneously. The only way to escape double check is to move the king - you cannot block both checks or capture both checking pieces. Here, the knight checks from e6 while the bishop gives discovered check along the long diagonal, and the king has no escape squares - checkmate!',
     tags: ['advanced', 'double-check', 'checkmate']
   },
 
@@ -300,7 +322,7 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'back-rank-mate',
     title: 'Deflection to Back Rank',
     description: 'Remove the defender of the back rank',
-    fen: '2r3k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1',
+    fen: '2r3k1/5ppp/8/8/8/8/5PPP/3RR1K1 w - - 0 1',
     playerSide: 'white',
     objective: 'checkmate',
     objectiveDescription: 'Force checkmate',
@@ -314,10 +336,10 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     },
     hints: [
       'The black rook is defending against back rank mate',
-      'You can deflect it with a sacrifice',
-      'Rd8+ forces the rook to capture, then Rxd8# is mate'
+      'You have two rooks to coordinate the attack',
+      'Rd8+ forces the rook to capture, then your second rook delivers mate!'
     ],
-    educational: 'Deflection is a tactic where you force an enemy piece away from an important defensive duty. Here, we deflect the defender of the back rank, allowing us to deliver checkmate.',
+    educational: 'Deflection is a tactic where you force an enemy piece away from an important defensive duty. Here, we deflect the defender of the back rank by sacrificing one rook, allowing the second rook to deliver checkmate.',
     tags: ['intermediate', 'deflection', 'sacrifice']
   },
 
@@ -327,22 +349,24 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'deflection',
     title: 'Deflect the Defender',
     description: 'Force the defender away',
-    fen: '3r2k1/5ppp/8/8/8/6Q1/5PPP/6K1 w - - 0 1',
+    fen: '3r2k1/6pp/8/8/8/6Q1/5PPP/5RK1 w - - 0 1',
     playerSide: 'white',
     objective: 'checkmate',
     objectiveDescription: 'Checkmate in two moves',
     difficulty: 2,
     solution: {
       'Qg7+': {
-        'Kxg7': 'success'
+        'Rxg7': {
+          'Rf8#': 'success'
+        }
       }
     },
     hints: [
-      'The rook on d8 is defending against mate on the 8th rank',
-      'Your queen can offer herself as a sacrifice',
-      'Qg7+ deflects the king, removing defense of d8'
+      'The rook on d8 is defending the back rank',
+      'Your queen can sacrifice herself to deflect the rook',
+      'After Qg7+ Rxg7, Rf8 is checkmate!'
     ],
-    educational: 'Deflection involves luring or forcing an enemy piece away from a critical square or defensive task. This can be done with checks, captures, or threats that the opponent cannot ignore.',
+    educational: 'Deflection involves luring or forcing an enemy piece away from a critical square or defensive task. Here, we sacrifice the queen to deflect the rook from the 8th rank, allowing our rook to deliver checkmate.',
     tags: ['intermediate', 'deflection', 'sacrifice']
   },
 
@@ -352,22 +376,24 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'decoy',
     title: 'Lure the King',
     description: 'Bring the king into danger',
-    fen: '6k1/5ppp/8/8/8/6Q1/5P1P/6K1 w - - 0 1',
+    fen: '6k1/5p1p/6p1/8/8/6Q1/5PPP/6K1 w - - 0 1',
     playerSide: 'white',
     objective: 'checkmate',
     objectiveDescription: 'Checkmate in two moves',
     difficulty: 2,
     solution: {
       'Qg7+': {
-        'Kxg7': 'success'
+        'Kxg7': {
+          'h4#': 'success'
+        }
       }
     },
     hints: [
       'You need to bring the king to a worse square',
       'The queen can sacrifice herself',
-      'After Qg7+ Kxg7, the king is decoyed to g7'
+      'After Qg7+ Kxg7, push h4 for a surprising checkmate pattern!'
     ],
-    educational: 'A decoy is a sacrifice that lures an enemy piece (often the king) to a worse square where it becomes vulnerable to a follow-up tactic. Decoys are closely related to deflections but focus on bringing pieces TO squares rather than away FROM them.',
+    educational: 'A decoy is a sacrifice that lures an enemy piece (often the king) to a worse square where it becomes vulnerable to a follow-up tactic. Here, after the king captures the queen on g7, it\'s trapped by its own pawns and the simple pawn move h4 delivers checkmate!',
     tags: ['intermediate', 'decoy', 'sacrifice']
   },
 
@@ -377,30 +403,27 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'remove-defender',
     title: 'Capture the Defender',
     description: 'Eliminate the piece protecting the target',
-    fen: 'r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 0 1',
+    fen: 'r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQK2R w KQ - 0 1',
     playerSide: 'white',
     objective: 'win-material',
-    objectiveDescription: 'Win the knight on f6',
+    objectiveDescription: 'Win the bishop on c5',
     difficulty: 2,
     solution: {
-      'Bxf7+': {
-        'Kxf7': {
-          'Nxe5+': {
-            'Ke8': 'success',
-            'Kg8': 'success',
-            'Ke7': 'success',
-            'Ke6': 'success',
-            'Kf8': 'success'
-          }
+      'Nxe5': {
+        'Nxe5': {
+          'Qd5': 'success'
+        },
+        'Qe7': {
+          'Nxc6': 'success'
         }
       }
     },
     hints: [
-      'The pawn on e5 is defending the knight on f6',
-      'You can remove this defender',
-      'Bxf7+ forces the king to recapture, then Nxe5+ wins'
+      'The knight on c6 is defending the bishop on c5',
+      'The pawn on e5 is defending the knight on c6',
+      'Remove the pawn first, and you win material!'
     ],
-    educational: 'Removing the defender is a straightforward but powerful tactic. Identify what piece is defending your target, and find a way to capture, deflect, or destroy that defender. Often this involves a forcing sequence of checks and captures.',
+    educational: 'Removing the defender is a straightforward but powerful tactic. Identify what piece is defending your target, and find a way to capture, deflect, or destroy that defender. Here, after capturing the pawn that defends the knight, if Black recaptures, you can win the bishop with a discovered attack.',
     tags: ['intermediate', 'remove-defender', 'tactics']
   },
 
