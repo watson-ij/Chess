@@ -31,10 +31,22 @@ export class PuzzleMode {
   private backButton: HTMLButtonElement;
   private nextPuzzleButton: HTMLButtonElement;
   private educational: HTMLElement;
+  private flipButton: HTMLElement | null;
+  private sizeSlider: HTMLInputElement | null;
+  private sizeDisplay: HTMLElement | null;
 
   private onBack: () => void;
   private onNextPuzzle?: () => void;
   private prefix: string;
+
+  // Store bound event handlers for cleanup
+  private boundHandleClick: (e: MouseEvent) => void;
+  private boundShowHint: () => void;
+  private boundResetPuzzle: () => void;
+  private boundBackClick: () => void;
+  private boundNextPuzzleClick: () => void;
+  private boundFlipBoard: () => void;
+  private boundSizeSliderInput: () => void;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -63,6 +75,34 @@ export class PuzzleMode {
     this.backButton = document.getElementById(`${this.prefix}back-button`) as HTMLButtonElement;
     this.nextPuzzleButton = document.getElementById(`${this.prefix}next-puzzle-button`) as HTMLButtonElement;
     this.educational = document.getElementById(`${this.prefix}educational`)!
+    this.flipButton = document.getElementById(`${this.prefix}puzzle-flip-board-btn`);
+    this.sizeSlider = document.getElementById(`${this.prefix}puzzle-board-size-slider`) as HTMLInputElement;
+    this.sizeDisplay = document.getElementById(`${this.prefix}puzzle-board-size-display`);
+
+    // Bind event handlers for proper cleanup
+    this.boundHandleClick = (e: MouseEvent) => this.handleClick(e);
+    this.boundShowHint = () => this.showHint();
+    this.boundResetPuzzle = () => this.resetPuzzle();
+    this.boundBackClick = () => {
+      this.cleanup();
+      this.onBack();
+    };
+    this.boundNextPuzzleClick = () => {
+      if (this.onNextPuzzle) {
+        this.cleanup();
+        this.onNextPuzzle();
+      }
+    };
+    this.boundFlipBoard = () => {
+      this.renderer.flipBoard();
+    };
+    this.boundSizeSliderInput = () => {
+      if (this.sizeSlider && this.sizeDisplay) {
+        const size = parseInt(this.sizeSlider.value);
+        this.sizeDisplay.textContent = `${size}px`;
+        this.renderer.setBoardSize(size);
+      }
+    };
 
     this.initializePuzzle();
     this.setupEventListeners();
@@ -97,48 +137,28 @@ export class PuzzleMode {
    */
   private setupEventListeners(): void {
     // Canvas click for moves
-    this.renderer.getCanvas().addEventListener('click', (e) => this.handleClick(e));
+    this.renderer.getCanvas().addEventListener('click', this.boundHandleClick);
 
     // Hint button
-    this.hintButton.addEventListener('click', () => this.showHint());
+    this.hintButton.addEventListener('click', this.boundShowHint);
 
     // Reset button
-    this.resetButton.addEventListener('click', () => this.resetPuzzle());
+    this.resetButton.addEventListener('click', this.boundResetPuzzle);
 
     // Back button
-    this.backButton.addEventListener('click', () => {
-      this.cleanup();
-      this.onBack();
-    });
+    this.backButton.addEventListener('click', this.boundBackClick);
 
     // Next puzzle button
-    this.nextPuzzleButton.addEventListener('click', () => {
-      if (this.onNextPuzzle) {
-        this.cleanup();
-        this.onNextPuzzle();
-      }
-    });
+    this.nextPuzzleButton.addEventListener('click', this.boundNextPuzzleClick);
 
     // Board control buttons
-    const flipButton = document.getElementById(`${this.prefix}puzzle-flip-board-btn`);
-    if (flipButton) {
-      flipButton.addEventListener('click', () => {
-        this.renderer.flipBoard();
-      });
+    if (this.flipButton) {
+      this.flipButton.addEventListener('click', this.boundFlipBoard);
     }
 
     // Board size slider
-    const sizeSlider = document.getElementById(`${this.prefix}puzzle-board-size-slider`) as HTMLInputElement;
-    const sizeDisplay = document.getElementById(`${this.prefix}puzzle-board-size-display`);
-
-    if (sizeSlider) {
-      sizeSlider.addEventListener('input', () => {
-        const size = parseInt(sizeSlider.value);
-        if (sizeDisplay) {
-          sizeDisplay.textContent = `${size}px`;
-        }
-        this.renderer.setBoardSize(size);
-      });
+    if (this.sizeSlider) {
+      this.sizeSlider.addEventListener('input', this.boundSizeSliderInput);
     }
   }
 
@@ -412,7 +432,19 @@ export class PuzzleMode {
    * Cleanup
    */
   private cleanup(): void {
-    // Remove event listeners
-    this.renderer.getCanvas().removeEventListener('click', this.handleClick);
+    // Remove all event listeners
+    this.renderer.getCanvas().removeEventListener('click', this.boundHandleClick);
+    this.hintButton.removeEventListener('click', this.boundShowHint);
+    this.resetButton.removeEventListener('click', this.boundResetPuzzle);
+    this.backButton.removeEventListener('click', this.boundBackClick);
+    this.nextPuzzleButton.removeEventListener('click', this.boundNextPuzzleClick);
+
+    if (this.flipButton) {
+      this.flipButton.removeEventListener('click', this.boundFlipBoard);
+    }
+
+    if (this.sizeSlider) {
+      this.sizeSlider.removeEventListener('input', this.boundSizeSliderInput);
+    }
   }
 }
