@@ -7,6 +7,7 @@ export class ChessBoardRenderer {
   private selectedSquare: Position | null = null;
   private highlightedSquares: Position[] = [];
   private currentBoard: Board | null = null;
+  private flipped: boolean = false; // Board orientation (false = white on bottom, true = black on bottom)
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -39,6 +40,32 @@ export class ChessBoardRenderer {
     this.drawPieces(board);
   }
 
+  /**
+   * Convert board position to display position (accounting for flip)
+   */
+  private toDisplayPos(pos: Position): Position {
+    if (this.flipped) {
+      return {
+        row: 7 - pos.row,
+        col: 7 - pos.col
+      };
+    }
+    return pos;
+  }
+
+  /**
+   * Convert display position to board position (accounting for flip)
+   */
+  private toBoardPos(pos: Position): Position {
+    if (this.flipped) {
+      return {
+        row: 7 - pos.row,
+        col: 7 - pos.col
+      };
+    }
+    return pos;
+  }
+
   private drawBoard(): void {
     const lightColor = '#f0d9b5';
     const darkColor = '#b58863';
@@ -64,7 +91,8 @@ export class ChessBoardRenderer {
     for (let col = 0; col < 8; col++) {
       const isLight = col % 2 === 0;
       this.ctx.fillStyle = isLight ? darkColor : lightColor;
-      const letter = String.fromCharCode(97 + col);
+      const boardCol = this.flipped ? 7 - col : col;
+      const letter = String.fromCharCode(97 + boardCol);
       this.ctx.fillText(
         letter,
         col * this.squareSize + this.squareSize - 15,
@@ -76,8 +104,9 @@ export class ChessBoardRenderer {
     for (let row = 0; row < 8; row++) {
       const isLight = row % 2 === 0;
       this.ctx.fillStyle = isLight ? lightColor : darkColor;
+      const boardRow = this.flipped ? row : 7 - row;
       this.ctx.fillText(
-        String(8 - row),
+        String(boardRow + 1),
         5,
         row * this.squareSize + 15
       );
@@ -87,10 +116,11 @@ export class ChessBoardRenderer {
   private drawHighlights(): void {
     // Highlight selected square
     if (this.selectedSquare) {
+      const displayPos = this.toDisplayPos(this.selectedSquare);
       this.ctx.fillStyle = 'rgba(255, 255, 0, 0.4)';
       this.ctx.fillRect(
-        this.selectedSquare.col * this.squareSize,
-        this.selectedSquare.row * this.squareSize,
+        displayPos.col * this.squareSize,
+        displayPos.row * this.squareSize,
         this.squareSize,
         this.squareSize
       );
@@ -99,10 +129,11 @@ export class ChessBoardRenderer {
     // Highlight legal move squares
     this.ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
     for (const square of this.highlightedSquares) {
+      const displayPos = this.toDisplayPos(square);
       this.ctx.beginPath();
       this.ctx.arc(
-        square.col * this.squareSize + this.squareSize / 2,
-        square.row * this.squareSize + this.squareSize / 2,
+        displayPos.col * this.squareSize + this.squareSize / 2,
+        displayPos.row * this.squareSize + this.squareSize / 2,
         this.squareSize / 6,
         0,
         Math.PI * 2
@@ -123,8 +154,9 @@ export class ChessBoardRenderer {
   }
 
   private drawPiece(piece: Piece, pos: Position): void {
-    const x = pos.col * this.squareSize + this.squareSize / 2;
-    const y = pos.row * this.squareSize + this.squareSize / 2;
+    const displayPos = this.toDisplayPos(pos);
+    const x = displayPos.col * this.squareSize + this.squareSize / 2;
+    const y = displayPos.row * this.squareSize + this.squareSize / 2;
     const size = this.squareSize * 0.4;
 
     this.ctx.save();
@@ -517,10 +549,11 @@ export class ChessBoardRenderer {
   }
 
   public getSquareFromClick(x: number, y: number): Position {
-    return {
+    const displayPos = {
       row: Math.floor(y / this.squareSize),
       col: Math.floor(x / this.squareSize)
     };
+    return this.toBoardPos(displayPos);
   }
 
   public getCanvas(): HTMLCanvasElement {
@@ -538,6 +571,33 @@ export class ChessBoardRenderer {
   }
 
   /**
+   * Flip the board orientation
+   */
+  public flipBoard(): void {
+    this.flipped = !this.flipped;
+    if (this.currentBoard) {
+      this.render(this.currentBoard);
+    }
+  }
+
+  /**
+   * Get current board orientation
+   */
+  public isFlipped(): boolean {
+    return this.flipped;
+  }
+
+  /**
+   * Set board size manually
+   */
+  public setBoardSize(size: number): void {
+    this.resizeToSize(size);
+    if (this.currentBoard) {
+      this.render(this.currentBoard);
+    }
+  }
+
+  /**
    * Resize the canvas based on its container size
    * This should be called when the window is resized or when the canvas is first created
    */
@@ -552,7 +612,8 @@ export class ChessBoardRenderer {
 
     // Calculate the maximum size the canvas can be
     const containerWidth = container.clientWidth;
-    const maxSize = Math.min(containerWidth, 640); // Cap at 640px for large screens
+    // Allow up to 800px now that we have manual resize control
+    const maxSize = Math.min(containerWidth, 800);
 
     this.resizeToSize(maxSize);
   }
