@@ -80,6 +80,15 @@ export class PuzzleMode {
     this.attempts = 0;
     this.isComplete = false;
     this.nextPuzzleButton.style.display = 'none';
+
+    // Auto-flip the board to the perspective of the side whose turn it is to move
+    const currentTurn = this.engine.getCurrentTurn();
+    if (currentTurn === 'black') {
+      this.renderer.setFlipped(true);
+    } else {
+      this.renderer.setFlipped(false);
+    }
+
     this.render();
   }
 
@@ -109,6 +118,28 @@ export class PuzzleMode {
         this.onNextPuzzle();
       }
     });
+
+    // Board control buttons
+    const flipButton = document.getElementById(`${this.prefix}puzzle-flip-board-btn`);
+    if (flipButton) {
+      flipButton.addEventListener('click', () => {
+        this.renderer.flipBoard();
+      });
+    }
+
+    // Board size slider
+    const sizeSlider = document.getElementById(`${this.prefix}puzzle-board-size-slider`) as HTMLInputElement;
+    const sizeDisplay = document.getElementById(`${this.prefix}puzzle-board-size-display`);
+
+    if (sizeSlider) {
+      sizeSlider.addEventListener('input', () => {
+        const size = parseInt(sizeSlider.value);
+        if (sizeDisplay) {
+          sizeDisplay.textContent = `${size}px`;
+        }
+        this.renderer.setBoardSize(size);
+      });
+    }
   }
 
   /**

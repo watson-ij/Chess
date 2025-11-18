@@ -157,7 +157,19 @@
         <h1>Opening Repository</h1>
       </div>
       <div id="openings-layout">
-        <canvas id="opening-board"></canvas>
+        <div id="opening-board-wrapper">
+          <canvas id="opening-board"></canvas>
+          <div id="opening-board-controls">
+            <div id="opening-board-control-buttons">
+              <button id="opening-flip-board-btn" class="control-btn-small" title="Flip board">🔄 Flip</button>
+              <div id="opening-board-size-control">
+                <label for="opening-board-size-slider" title="Board size">📐</label>
+                <input type="range" id="opening-board-size-slider" min="320" max="800" value="640" step="20">
+                <span id="opening-board-size-display">640px</span>
+              </div>
+            </div>
+          </div>
+        </div>
         <div id="openings-panel">
 
           <!-- Repository Management -->
@@ -255,7 +267,19 @@
       <div id="puzzle-game" class="hidden">
         <button id="back-to-puzzles" class="btn-back">← Back to Puzzles</button>
         <div id="puzzle-container">
-          <canvas id="puzzle-board"></canvas>
+          <div id="puzzle-board-wrapper">
+            <canvas id="puzzle-board"></canvas>
+            <div id="puzzle-board-controls">
+              <div id="puzzle-board-control-buttons">
+                <button id="puzzle-flip-board-btn" class="control-btn-small" title="Flip board">🔄 Flip</button>
+                <div id="puzzle-board-size-control">
+                  <label for="puzzle-board-size-slider" title="Board size">📐</label>
+                  <input type="range" id="puzzle-board-size-slider" min="320" max="800" value="640" step="20">
+                  <span id="puzzle-board-size-display">640px</span>
+                </div>
+              </div>
+            </div>
+          </div>
           <div id="puzzle-panel">
             <div id="puzzle-info">
               <h2 id="puzzle-title"></h2>
@@ -303,7 +327,19 @@
       <div id="tactical-puzzle-game" class="hidden">
         <button id="tactical-back-to-puzzles" class="btn-back">← Back to Puzzles</button>
         <div id="tactical-puzzle-container">
-          <canvas id="tactical-puzzle-board"></canvas>
+          <div id="tactical-puzzle-board-wrapper">
+            <canvas id="tactical-puzzle-board"></canvas>
+            <div id="tactical-puzzle-board-controls">
+              <div id="tactical-puzzle-board-control-buttons">
+                <button id="tactical-puzzle-flip-board-btn" class="control-btn-small" title="Flip board">🔄 Flip</button>
+                <div id="tactical-puzzle-board-size-control">
+                  <label for="tactical-puzzle-board-size-slider" title="Board size">📐</label>
+                  <input type="range" id="tactical-puzzle-board-size-slider" min="320" max="800" value="640" step="20">
+                  <span id="tactical-puzzle-board-size-display">640px</span>
+                </div>
+              </div>
+            </div>
+          </div>
           <div id="tactical-puzzle-panel">
             <div id="tactical-puzzle-info">
               <h2 id="tactical-puzzle-title"></h2>
