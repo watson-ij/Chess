@@ -588,6 +588,16 @@ export class ChessBoardRenderer {
   }
 
   /**
+   * Set board orientation
+   */
+  public setFlipped(flipped: boolean): void {
+    this.flipped = flipped;
+    if (this.currentBoard) {
+      this.render(this.currentBoard);
+    }
+  }
+
+  /**
    * Set board size manually
    */
   public setBoardSize(size: number): void {

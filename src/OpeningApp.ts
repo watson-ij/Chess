@@ -105,6 +105,25 @@ export class OpeningApp {
     document.getElementById('btn-reset-input')?.addEventListener('click', () => {
       this.resetInputMode();
     });
+
+    // Board control buttons
+    document.getElementById('opening-flip-board-btn')?.addEventListener('click', () => {
+      this.renderer.flipBoard();
+    });
+
+    // Board size slider
+    const sizeSlider = document.getElementById('opening-board-size-slider') as HTMLInputElement;
+    const sizeDisplay = document.getElementById('opening-board-size-display');
+
+    if (sizeSlider) {
+      sizeSlider.addEventListener('input', () => {
+        const size = parseInt(sizeSlider.value);
+        if (sizeDisplay) {
+          sizeDisplay.textContent = `${size}px`;
+        }
+        this.renderer.setBoardSize(size);
+      });
+    }
   }
 
   private handleCanvasClick(event: MouseEvent): void {
