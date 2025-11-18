@@ -12,7 +12,7 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'fork',
     title: 'Classic Knight Fork',
     description: 'Fork the king and rook with a check',
-    fen: 'r1bqkb1r/pppp1ppp/2n5/3Np3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1',
+    fen: 'r1bqkb1r/pp1p1ppp/2n5/3Np3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1',
     playerSide: 'white',
     objective: 'win-material',
     objectiveDescription: 'Win the rook with a knight fork',
@@ -101,23 +101,23 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'pin',
     title: 'Absolute Pin',
     description: 'Exploit an absolute pin to win material',
-    fen: 'r2qkb1r/ppp2ppp/2n5/3pP3/2Bn4/8/PPP2PPP/RNBQK2R w KQkq - 0 1',
+    fen: 'r2qkb1r/ppp2ppp/4n3/3pP3/2B5/8/PPP2PPP/RNBQK2R w KQkq - 0 1',
     playerSide: 'white',
     objective: 'win-material',
     objectiveDescription: 'Win the pinned knight',
     difficulty: 1,
     solution: {
-      'Qxe4': {
-        'dxe4': 'success',
+      'Bxe6': {
+        'fxe6': 'success',
         'Qe7': 'success'
       }
     },
     hints: [
-      'The knight on e4 is pinned to the king on e8',
+      'The knight on e6 is pinned to the king on e8',
       'Your bishop on c4 creates an absolute pin along the diagonal',
       'The knight cannot move without exposing the king to check - capture it!'
     ],
-    educational: 'An absolute pin occurs when a piece cannot legally move because doing so would expose the king to check. Here, the black knight on e4 is pinned by your bishop on c4 to the black king on e8. The pinned piece is essentially paralyzed and can often be captured or exploited.',
+    educational: 'An absolute pin occurs when a piece cannot legally move because doing so would expose the king to check. Here, the black knight on e6 is pinned by your bishop on c4 to the black king on e8. The pinned piece is essentially paralyzed and can often be captured or exploited.',
     tags: ['beginner', 'absolute-pin', 'fundamental']
   },
   {
@@ -355,7 +355,7 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     objectiveDescription: 'Checkmate in two moves',
     difficulty: 2,
     solution: {
-      'Qg7+': {
+      'Qxg7+': {
         'Rxg7': {
           'Rf8#': 'success'
         }
@@ -364,7 +364,7 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     hints: [
       'The rook on d8 is defending the back rank',
       'Your queen can sacrifice herself to deflect the rook',
-      'After Qg7+ Rxg7, Rf8 is checkmate!'
+      'After Qxg7+ Rxg7, Rf8 is checkmate!'
     ],
     educational: 'Deflection involves luring or forcing an enemy piece away from a critical square or defensive task. Here, we sacrifice the queen to deflect the rook from the 8th rank, allowing our rook to deliver checkmate.',
     tags: ['intermediate', 'deflection', 'sacrifice']
