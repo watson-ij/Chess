@@ -11,23 +11,31 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     id: 'fork-001',
     theme: 'fork',
     title: 'Classic Knight Fork',
-    description: 'Use a knight fork to win material',
-    fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1',
+    description: 'Fork the king and rook with a check',
+    fen: 'r1bqkb1r/pppp1ppp/2n5/3Np3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1',
     playerSide: 'white',
     objective: 'win-material',
-    objectiveDescription: 'Win a piece with a knight fork',
+    objectiveDescription: 'Win the rook with a knight fork',
     difficulty: 1,
     solution: {
-      'Nxe5': {
-        'Nxe5': 'success'
+      'Nc7+': {
+        'Kd8': {
+          'Nxa8': 'success'
+        },
+        'Kf8': {
+          'Nxa8': 'success'
+        },
+        'Ke7': {
+          'Nxa8': 'success'
+        }
       }
     },
     hints: [
-      'Look for a piece that can attack two valuable pieces at once',
-      'The knight on f3 can jump to a central square',
-      'Nxe5 forks the king and the knight on c6'
+      'Look for a square where your knight can attack two valuable pieces',
+      'The black king is still in the center',
+      'Nc7+ gives check and attacks the rook on a8!'
     ],
-    educational: 'A knight fork is one of the most common tactical motifs. Knights are particularly effective at forking because they can attack squares that other pieces cannot reach simultaneously. Always look for opportunities to place your knight where it attacks two or more valuable enemy pieces.',
+    educational: 'A knight fork is one of the most common tactical motifs. This is a classic example where the knight forks the king and rook. Since it\'s check, the opponent must move the king, allowing you to capture the rook on the next move. Knights are particularly effective at forking because they can attack squares that other pieces cannot reach simultaneously.',
     tags: ['beginner', 'knight-fork', 'fundamental']
   },
   {
@@ -35,23 +43,27 @@ export const TACTICAL_PUZZLES: TacticalPuzzle[] = [
     theme: 'fork',
     title: 'Royal Fork',
     description: 'Fork the king and queen',
-    fen: 'r2qk2r/ppp2ppp/2n5/3p4/1b1P4/2N2N2/PPP2PPP/R1BQR1K1 b kq - 0 1',
+    fen: 'r1bqk2r/pppp1ppp/8/4p3/4n3/8/PPPP1PPP/RNQ2RK1 b kq - 0 1',
     playerSide: 'black',
     objective: 'win-material',
     objectiveDescription: 'Win the queen with a royal fork',
     difficulty: 2,
     solution: {
-      'Nxd4': {
-        'Qxd4': 'success',
-        'Nxd4': 'success'
+      'Ne2+': {
+        'Kh1': {
+          'Nxc1': 'success'
+        },
+        'Kf1': {
+          'Nxc1': 'success'
+        }
       }
     },
     hints: [
       'The white king and queen are on vulnerable squares',
-      'Your knight on c6 can deliver a devastating blow',
-      'Nxd4 forks the king on g1 and queen on d1'
+      'Your knight on e4 can deliver a devastating blow',
+      'Ne2+ gives check and forks the king on g1 and queen on c1!'
     ],
-    educational: 'A "royal fork" is when a knight simultaneously attacks the enemy king and queen. This is often decisive as the opponent must move the king, allowing you to capture the queen on the next move.',
+    educational: 'A "royal fork" is when a knight simultaneously attacks the enemy king and queen. This is often decisive as the opponent must move the king, allowing you to capture the queen on the next move. Always look for opportunities to place your knight where it can fork the king with other valuable pieces.',
     tags: ['intermediate', 'royal-fork', 'winning-queen']
   },
   {
