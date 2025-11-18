@@ -10,26 +10,47 @@ describe('ChessEngine - Advanced Notation Tests', () => {
 
   describe('Check and Checkmate Symbols in Notation', () => {
     it('should generate move notation with check symbol', () => {
+      // Use a FEN position where we can deliver check (not checkmate)
+      engine.loadFEN('rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2');
+      engine.makeSANMove('Nf6'); // Normal move
+      engine.makeSANMove('Bc4'); // Sets up for check
+      engine.makeSANMove('Nxe4'); // Capture
+      engine.makeSANMove('Bxf7+'); // Check (not checkmate)
+
+      const history = engine.getMoveHistory();
+      const lastMove = history[history.length - 1];
+
+      // The notation should include check symbol
+      expect(lastMove.notation).toBe('Bxf7+');
+
+      // Verify it is indeed check (but not checkmate)
+      const state = engine.getState();
+      expect(state.isCheck).toBe(true);
+      expect(state.isCheckmate).toBe(false);
+    });
+
+    it('should generate move notation with checkmate symbol', () => {
       engine.makeSANMove('e4');
       engine.makeSANMove('e5');
       engine.makeSANMove('Bc4');
       engine.makeSANMove('Nc6');
       engine.makeSANMove('Qh5');
       engine.makeSANMove('Nf6');
-      engine.makeSANMove('Qxf7+'); // Check
+      engine.makeSANMove('Qxf7#'); // Checkmate (Scholar's Mate)
 
       const history = engine.getMoveHistory();
       const lastMove = history[history.length - 1];
 
-      // The notation should include the destination
-      expect(lastMove.notation).toBe('Qxf7');
+      // The notation should include checkmate symbol
+      expect(lastMove.notation).toBe('Qxf7#');
 
-      // Verify it is indeed check
+      // Verify it is indeed checkmate
       const state = engine.getState();
-      expect(state.isCheck).toBe(true);
+      expect(state.isCheckmate).toBe(true);
+      expect(engine.isGameOver()).toBe(true);
     });
 
-    it('should generate move notation with checkmate', () => {
+    it('should generate move notation with checkmate (Fool\'s Mate)', () => {
       engine.makeSANMove('f3');
       engine.makeSANMove('e5');
       engine.makeSANMove('g4');

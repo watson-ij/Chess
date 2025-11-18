@@ -418,77 +418,149 @@ export class ChessEngine {
     return true;
   }
 
+  /**
+   * Generate Standard Algebraic Notation (SAN) for a move
+   */
   private generateMoveNotation(move: Move): string {
     if (move.isCastling) {
-      return move.to.col === 6 ? 'O-O' : 'O-O-O';
+      return this.generateCastlingNotation(move);
     }
 
     let notation = '';
 
     // Piece letter (except for pawns)
-    if (move.piece.type !== 'pawn') {
-      const pieceNotation: Record<PieceType, string> = {
-        'king': 'K',
-        'queen': 'Q',
-        'rook': 'R',
-        'bishop': 'B',
-        'knight': 'N',
-        'pawn': ''
-      };
-      notation += pieceNotation[move.piece.type];
-    }
+    notation += this.getPieceNotationLetter(move.piece.type);
 
-    // Capture
-    if (move.capturedPiece) {
-      if (move.piece.type === 'pawn') {
-        notation += String.fromCharCode(97 + move.from.col);
-      }
-      notation += 'x';
-    }
+    // Capture notation
+    notation += this.addCaptureNotation(move);
 
-    // Destination
-    notation += String.fromCharCode(97 + move.to.col) + (8 - move.to.row);
+    // Destination square
+    notation += this.addDestinationNotation(move.to);
 
     // Promotion
-    if (move.promotionPiece) {
-      const pieceNotation: Record<PieceType, string> = {
-        'queen': 'Q',
-        'rook': 'R',
-        'bishop': 'B',
-        'knight': 'N',
-        'king': 'K',
-        'pawn': ''
-      };
-      notation += '=' + pieceNotation[move.promotionPiece];
-    }
+    notation += this.addPromotionNotation(move.promotionPiece);
 
     // Check and checkmate symbols
-    // We need to check the resulting position after this move
+    notation += this.addCheckOrCheckmateSymbol();
+
+    return notation;
+  }
+
+  /**
+   * Generate notation for castling moves
+   */
+  private generateCastlingNotation(move: Move): string {
+    return move.to.col === 6 ? 'O-O' : 'O-O-O';
+  }
+
+  /**
+   * Get the standard notation letter for a piece type
+   */
+  private getPieceNotationLetter(pieceType: PieceType): string {
+    if (pieceType === 'pawn') {
+      return '';
+    }
+
+    const pieceNotation: Record<PieceType, string> = {
+      'king': 'K',
+      'queen': 'Q',
+      'rook': 'R',
+      'bishop': 'B',
+      'knight': 'N',
+      'pawn': ''
+    };
+
+    return pieceNotation[pieceType];
+  }
+
+  /**
+   * Add capture notation to the move string
+   * For pawns, includes the file (column) of the capturing pawn
+   */
+  private addCaptureNotation(move: Move): string {
+    if (!move.capturedPiece) {
+      return '';
+    }
+
+    let captureNotation = '';
+
+    // For pawn captures, include the file of the pawn
+    if (move.piece.type === 'pawn') {
+      captureNotation += String.fromCharCode(97 + move.from.col);
+    }
+
+    captureNotation += 'x';
+
+    return captureNotation;
+  }
+
+  /**
+   * Convert position to algebraic notation (e.g., e4, a1)
+   */
+  private addDestinationNotation(position: Position): string {
+    const file = String.fromCharCode(97 + position.col); // a-h
+    const rank = 8 - position.row; // 1-8
+    return file + rank;
+  }
+
+  /**
+   * Add promotion notation to the move string
+   */
+  private addPromotionNotation(promotionPiece: PieceType | undefined): string {
+    if (!promotionPiece) {
+      return '';
+    }
+
+    const pieceNotation: Record<PieceType, string> = {
+      'queen': 'Q',
+      'rook': 'R',
+      'bishop': 'B',
+      'knight': 'N',
+      'king': 'K',
+      'pawn': ''
+    };
+
+    return '=' + pieceNotation[promotionPiece];
+  }
+
+  /**
+   * Add check (+) or checkmate (#) symbol based on resulting position
+   */
+  private addCheckOrCheckmateSymbol(): string {
     const opponentColor = this.state.currentTurn === 'white' ? 'black' : 'white';
     const kingPos = this.findKing(opponentColor);
 
-    if (kingPos) {
-      const wouldBeCheck = this.isSquareUnderAttack(kingPos, opponentColor);
-
-      if (wouldBeCheck) {
-        // Temporarily switch turn to check if opponent has legal moves
-        const originalTurn = this.state.currentTurn;
-        this.state.currentTurn = opponentColor;
-
-        const hasLegalMoves = this.hasAnyLegalMoves(opponentColor);
-
-        // Switch turn back
-        this.state.currentTurn = originalTurn;
-
-        if (!hasLegalMoves) {
-          notation += '#';
-        } else {
-          notation += '+';
-        }
-      }
+    if (!kingPos) {
+      return '';
     }
 
-    return notation;
+    const isCheck = this.isSquareUnderAttack(kingPos, opponentColor);
+
+    if (!isCheck) {
+      return '';
+    }
+
+    // Check if it's checkmate by testing if opponent has any legal moves
+    const isCheckmate = !this.hasLegalMovesForColor(opponentColor);
+
+    return isCheckmate ? '#' : '+';
+  }
+
+  /**
+   * Check if a color has any legal moves
+   * Used for checkmate detection
+   */
+  private hasLegalMovesForColor(color: PieceColor): boolean {
+    // Temporarily switch turn to check legal moves
+    const originalTurn = this.state.currentTurn;
+    this.state.currentTurn = color;
+
+    const hasLegalMoves = this.hasAnyLegalMoves(color);
+
+    // Restore original turn
+    this.state.currentTurn = originalTurn;
+
+    return hasLegalMoves;
   }
 
   private updateGameState(): void {
