@@ -115,24 +115,36 @@
       </div>
 
       <div id="game-container" style="display: none;">
-        <canvas id="chess-board"></canvas>
-        <div id="side-panel">
-          <div id="game-info">
-            <div id="turn-indicator"></div>
-            <div id="game-status"></div>
-            <div id="ai-thinking" style="display: none;">
-              <span class="spinner"></span> AI is thinking...
+        <div id="board-and-moves">
+          <div id="board-wrapper">
+            <canvas id="chess-board"></canvas>
+            <div id="board-controls">
+              <div id="board-control-buttons">
+                <button id="flip-board-btn" class="control-btn-small" title="Flip board">🔄 Flip</button>
+                <div id="board-size-control">
+                  <label for="board-size-slider" title="Board size">📐</label>
+                  <input type="range" id="board-size-slider" min="320" max="800" value="640" step="20">
+                  <span id="board-size-display">640px</span>
+                </div>
+              </div>
+              <div id="move-navigation">
+                <button id="nav-start" class="nav-btn" title="Go to start">⏮</button>
+                <button id="nav-prev" class="nav-btn" title="Previous move">◀</button>
+                <button id="nav-next" class="nav-btn" title="Next move">▶</button>
+                <button id="nav-end" class="nav-btn" title="Go to end">⏭</button>
+              </div>
             </div>
           </div>
-          <div id="move-history">
+          <div id="move-history-sidebar">
             <h3>Move History</h3>
-            <div id="move-navigation">
-              <button id="nav-start" class="nav-btn" title="Go to start">⏮</button>
-              <button id="nav-prev" class="nav-btn" title="Previous move">◀</button>
-              <button id="nav-next" class="nav-btn" title="Next move">▶</button>
-              <button id="nav-end" class="nav-btn" title="Go to end">⏭</button>
-            </div>
             <div id="moves-list"></div>
+          </div>
+        </div>
+        <div id="game-info">
+          <div id="turn-indicator"></div>
+          <div id="game-status"></div>
+          <div id="ai-thinking" style="display: none;">
+            <span class="spinner"></span> AI is thinking...
           </div>
         </div>
       </div>

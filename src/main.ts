@@ -47,6 +47,7 @@ class ChessApp {
 
     this.setupSetupPanelListeners();
     this.setupNavigationListeners();
+    this.setupBoardControlListeners();
   }
 
 
@@ -110,6 +111,37 @@ class ChessApp {
     }
     if (navEnd) {
       navEnd.addEventListener('click', () => this.navigateToEnd());
+    }
+  }
+
+  /**
+   * Setup board control listeners (flip, resize)
+   */
+  private setupBoardControlListeners(): void {
+    // Flip board button
+    const flipButton = document.getElementById('flip-board-btn');
+    if (flipButton) {
+      flipButton.addEventListener('click', () => {
+        if (this.renderer) {
+          this.renderer.flipBoard();
+        }
+      });
+    }
+
+    // Board size slider
+    const sizeSlider = document.getElementById('board-size-slider') as HTMLInputElement;
+    const sizeDisplay = document.getElementById('board-size-display');
+
+    if (sizeSlider) {
+      sizeSlider.addEventListener('input', () => {
+        const size = parseInt(sizeSlider.value);
+        if (sizeDisplay) {
+          sizeDisplay.textContent = `${size}px`;
+        }
+        if (this.renderer) {
+          this.renderer.setBoardSize(size);
+        }
+      });
     }
   }
 
